@@ -104,23 +104,47 @@ function pixelRatio() {
   return Math.min(window.devicePixelRatio || 1, useBloom ? 1.6 : 2);
 }
 
+const navEl = document.querySelector('.site-nav');
+const readoutEl = clockRoot.querySelector('.clock3d__readout');
+
+/**
+ * Place the camera so the ring (plus the second indicator's orbit) fits
+ * inside the region between the nav at the top and the readout at the
+ * bottom, and sits centred in that region rather than in the viewport.
+ */
 function frameCamera() {
   const w = window.innerWidth;
   const h = window.innerHeight;
   const aspect = w / h;
   camera.aspect = aspect;
 
-  // distance so the ring (plus orbit margin) fits the narrower axis
-  const halfFov = THREE.MathUtils.degToRad(camera.fov / 2);
-  const fitAxis = Math.min(1, aspect);
-  const dist = (FRAME_HALF_EXTENT / Math.tan(halfFov)) / fitAxis;
+  // overlay reserves in CSS pixels; the readout is measured once it has text
+  const navRect = navEl.getBoundingClientRect();
+  const readoutRect = readoutEl.getBoundingClientRect();
+  const top = Math.max(0, navRect.bottom) + 12;
+  const readoutTop = readoutRect.height > 0 ? readoutRect.top : h * 0.84;
+  const bottom = Math.max(0, h - readoutTop) + 10;
+  const availH = Math.max(h * 0.4, h - top - bottom);
+  const sideMargin = Math.min(24, w * 0.04);
+  const availW = Math.max(w * 0.5, w - sideMargin * 2);
 
-  // on tall screens lift the ring above the readout
-  const lift = aspect < 0.8 ? -1.6 : aspect < 1.1 ? -0.9 : -0.4;
+  // distance so the ring extent fits both the available height and width
+  const halfFov = THREE.MathUtils.degToRad(camera.fov / 2);
+  const tanHalf = Math.tan(halfFov);
+  const extent = FRAME_HALF_EXTENT * 1.04;
+  const distH = extent * h / (availH * tanHalf);
+  const distW = extent * h / (availW * tanHalf);
+  const dist = Math.max(distH, distW);
+
+  // shift the look-at point so the ring centres in the available region
+  const unitsPerPx = (2 * dist * tanHalf) / h;
+  const centerOffsetPx = (bottom - top) / 2;        // +ve: region centre is above viewport centre
+  const targetY = -centerOffsetPx * unitsPerPx;
+
   // a gentle look-down angle so the ring reads as a solid object
   const pitch = THREE.MathUtils.degToRad(11);
-  camera.position.set(0, lift + Math.sin(pitch) * dist, Math.cos(pitch) * dist);
-  camera.lookAt(0, lift, 0);
+  camera.position.set(0, targetY + Math.sin(pitch) * dist, Math.cos(pitch) * dist);
+  camera.lookAt(0, targetY, 0);
   camera.updateProjectionMatrix();
 }
 
@@ -228,9 +252,15 @@ function frame() {
   gargantua.update(t);
   stars.update(t, pixelRatio());
 
+  if (first) frameCamera();   // the readout now has text, so its height is known
+
   if (composer) composer.render();
   else renderer.render(scene, camera);
   first = false;
+}
+
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(frameCamera);
 }
 
 if (reduceMotion) {
