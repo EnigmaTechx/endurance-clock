@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Endurance Clock · 3D</title>
+  <meta name="description" content="A 3D web clock themed on the Endurance from Interstellar, rendered with Three.js. Twelve ring modules mark the hours; the sky wheels past in the ship's rotating frame.">
+  <meta name="theme-color" content="#000000">
+  <link rel="stylesheet" href="css/clock3d.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <canvas id="scene" class="scene" aria-hidden="true"></canvas>
+
+  <nav class="site-nav" aria-label="Clock versions">
+    <span class="site-nav__brand">Endurance</span>
+    <span class="site-nav__links">
+      <a href="../">2D</a>
+      <span aria-current="page">3D</span>
+    </span>
+  </nav>
+
+  <div id="clock" class="clock3d" role="img" aria-label="Endurance clock">
+    <div class="clock3d__readout">
+      <div class="clock3d__time">
+        <span class="ec-hm"></span><span class="ec-seconds"></span><span class="ec-period"></span>
+      </div>
+      <div class="clock3d__meta"></div>
+    </div>
+  </div>
+
+  <div id="fallback" class="fallback" hidden>
+    <p>This version needs WebGL, which your browser has turned off or doesn't support.</p>
+    <p><a href="../">Open the 2D clock instead</a></p>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
