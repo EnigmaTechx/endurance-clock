@@ -15,6 +15,39 @@ Open `index.html` in a browser, or serve the folder with any static server:
 python3 -m http.server 8000
 ```
 
+## Deploy
+
+The site is static, so any static host works. It is deployed on Vercel at
+[clock.enigmatech.dev](https://clock.enigmatech.dev) (and `endurance-clock.vercel.app`).
+
+### Vercel
+
+1. **Add New Project** and import this repository.
+2. Framework preset **Other**. Leave the build command and install command empty.
+   Output directory is the repository root (`.`).
+3. Deploy. Every push to `main` becomes the production deployment; every pull
+   request gets a preview URL.
+
+### Custom subdomain
+
+1. In the Vercel project go to **Settings → Domains** and click **Add Existing**.
+   Enter `clock.enigmatech.dev` and connect it to the Production environment.
+2. At the domain registrar (GoDaddy, DNS management for `enigmatech.dev`) add
+   one record:
+
+   | Type  | Name    | Value                  |
+   |-------|---------|------------------------|
+   | CNAME | `clock` | `cname.vercel-dns.com` |
+
+   If the domain's nameservers were moved to Vercel, add the record in Vercel's
+   DNS dashboard instead.
+3. Vercel verifies the record and issues the TLS certificate automatically,
+   usually within a few minutes.
+
+`.dev` is an HTTPS-only, HSTS-preloaded top-level domain. Browsers refuse plain
+HTTP on it, so the site only loads once the certificate exists. Vercel handles
+that; any other host must serve HTTPS too.
+
 ## Drop it into another site
 
 Copy `css/endurance-clock.css` and `js/endurance-clock.js`, then:
