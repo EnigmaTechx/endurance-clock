@@ -7,6 +7,12 @@ minute as the second indicator, and the current hour's module lights up.
 
 Plain HTML, CSS and JavaScript. No dependencies, no build step.
 
+Two versions live side by side:
+
+- **2D** (`/`): an SVG clock, the lightweight drop-in component.
+- **3D** (`/3d/`): the same ship rendered with Three.js, loaded as an ES module
+  straight from a CDN via an import map. Still no build step.
+
 ## Run it
 
 Open `index.html` in a browser, or serve the folder with any static server:
@@ -47,6 +53,27 @@ The site is static, so any static host works. It is deployed on Vercel at
 `.dev` is an HTTPS-only, HSTS-preloaded top-level domain. Browsers refuse plain
 HTTP on it, so the site only loads once the certificate exists. Vercel handles
 that; any other host must serve HTTPS too.
+
+## The 3D version
+
+`3d/index.html` renders the Endurance as a real object. The camera rides in the
+ship's rotating frame: the ring holds still while the starfield and Gargantua
+wheel slowly around the ring's axis, which is what the crew would see from a
+window. Move the mouse or drag to tilt the view; it drifts gently when idle.
+
+- `3d/js/ship.js` builds the ring, modules, spokes, hub, hands and the orbiting
+  second indicator.
+- `3d/js/gargantua.js` is a stylised black hole: a shadow sphere, a shader-driven
+  accretion disc with Keplerian shear and relativistic beaming, and a lensed halo.
+  It is geometry and shaders, not ray-traced lensing, so it runs on phones.
+- `3d/js/stars.js` is a twinkling point-sprite starfield.
+- `3d/js/main.js` sets up the scene, lights, bloom and the render loop.
+
+Query parameters: `?quality=low` turns bloom off and `?quality=high` forces it on
+(it turns off automatically on small low-core devices), `?hour12=true|false` and `?locale=en-GB` override the
+readout. Without WebGL the page shows a link back to the 2D clock.
+
+Three.js is pinned to `0.170.0` in the import map in `3d/index.html`.
 
 ## Drop it into another site
 
