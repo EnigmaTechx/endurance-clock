@@ -154,6 +154,19 @@ browser withholds the gyroscope. If no readings arrive on a touch device a
 a tap), and elsewhere it explains how to allow motion sensors for the site. Brave
 blocks them by default. Off under `prefers-reduced-motion`.
 
+## Link previews, icons and install
+
+`assets/og.png` (1200×630) is the Open Graph and Twitter card image; both pages
+carry the tags. `manifest.webmanifest` plus the icons in `assets/` make the site
+installable as an app, with shortcuts to the 2D and 3D clocks and Miller's planet.
+`sw.js` is a network-first service worker: every load fetches fresh files and
+falls back to the cache only when offline, so the 2D clock works without a
+connection and deploys are picked up immediately.
+
+All the images are rendered from the real pages at a fixed time by
+`tools/capture.js` (needs Playwright with Chromium: `npx playwright install
+chromium`, then `node tools/capture.js`). Re-run it after visual changes.
+
 ## Accessibility
 
 The clock has `role="img"` with an `aria-label` that updates every minute. Under

@@ -1,0 +1,26 @@
+{
+  "name": "Endurance Clock",
+  "short_name": "Endurance",
+  "description": "A web clock themed on the Endurance from Interstellar. Twelve ring modules mark the hours.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#04060c",
+  "theme_color": "#04060c",
+  "lang": "en",
+  "icons": [
+    { "src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/assets/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/assets/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "2D clock", "url": "/", "icons": [{ "src": "/assets/icon-192.png", "sizes": "192x192" }] },
+    { "name": "3D clock", "url": "/3d/", "icons": [{ "src": "/assets/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Miller's planet", "url": "/3d/?mode=miller", "icons": [{ "src": "/assets/icon-192.png", "sizes": "192x192" }] }
+  ],
+  "screenshots": [
+    { "src": "/assets/og.png", "sizes": "1200x630", "type": "image/png", "form_factor": "wide", "label": "The 3D Endurance clock with Gargantua" }
+  ]
+}
