@@ -71,10 +71,19 @@ window. Move the mouse or drag to tilt the view; it drifts gently when idle.
   clockwise arc to the next module and settles onto its hatch as the hour turns.
   The flight is a pure function of the clock, so a sleeping tab or a mid-flight
   page load lands in the right place.
+- `3d/js/miller.js` is Miller's planet mode, toggled from the nav or with
+  `?mode=miller`. You are on the planet; the Endurance clock overhead runs at the
+  film's ratio, one hour here to seven years there (×61,362). The hour hand sweeps
+  about 1.4 times a second and the highlight chases round the ring, while the
+  readout counts elapsed Endurance time in years, days and hours with the Earth
+  date climbing. The minute hand and second craft fade out once the rate is past
+  reading, and the Ranger is gone, since it took you down to the surface. The
+  dilated clock is an analytic function of real elapsed time with a short ramp,
+  so it never drifts when a tab sleeps. Switching off snaps back to real time.
 - `3d/js/stars.js` is a twinkling point-sprite starfield.
 - `3d/js/main.js` sets up the scene, lights, bloom and the render loop.
 
-Query parameters: `?quality=low` turns bloom off and `?quality=high` forces it on
+Query parameters: `?mode=miller` starts in Miller's planet mode. `?quality=low` turns bloom off and `?quality=high` forces it on
 (it turns off automatically on small low-core devices), `?hour12=true|false` and `?locale=en-GB` override the
 readout. `?demo=dock` shifts the clock so the hour turns a few seconds after
 load, to watch the Ranger dock without waiting. Without WebGL the page shows a link back to the 2D clock.

@@ -7,10 +7,14 @@ export function createReadout(root, options) {
   const locale = options.locale || undefined;
   const hour12 = typeof options.hour12 === 'boolean' ? options.hour12 : undefined;
 
-  const hm = root.querySelector('.ec-hm');
-  const sec = root.querySelector('.ec-seconds');
-  const period = root.querySelector('.ec-period');
   const meta = root.querySelector('.clock3d__meta');
+  let hm, sec, period;
+  function bind() {
+    hm = root.querySelector('.ec-hm');
+    sec = root.querySelector('.ec-seconds');
+    period = root.querySelector('.ec-period');
+  }
+  bind();
 
   const timeFmt = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', hour12 });
   const dateFmt = new Intl.DateTimeFormat(locale, { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
@@ -28,7 +32,34 @@ export function createReadout(root, options) {
 
   function pad2(n) { return (n < 10 ? '0' : '') + n; }
 
+  function renderMeta(now, dateLabel) {
+    meta.textContent = '';
+    if (dateLabel) meta.appendChild(document.createTextNode(dateLabel + ' '));
+    meta.appendChild(document.createTextNode(dateFmt.format(now)));
+    const sep = document.createElement('span');
+    sep.className = 'ec-sep';
+    sep.textContent = '·';
+    meta.appendChild(sep);
+    meta.appendChild(document.createTextNode(zoneName(now) + ' local'));
+  }
+
+  let lastMetaKey = '';
+
   return {
+    /** Re-find the time spans after the time element was rebuilt; force a redraw. */
+    reset() {
+      bind();
+      lastSecond = -1;
+      lastMinute = -1;
+      lastMetaKey = '';
+    },
+    /** Date line only, redrawn when the calendar day changes (used in Miller mode). */
+    updateMeta(now, dateLabel) {
+      const key = now.getFullYear() + '-' + now.getMonth() + '-' + now.getDate();
+      if (key === lastMetaKey) return;
+      lastMetaKey = key;
+      renderMeta(now, dateLabel);
+    },
     update(now) {
       const s = now.getSeconds();
       const m = now.getMinutes();
@@ -47,13 +78,7 @@ export function createReadout(root, options) {
       }
       if (m !== lastMinute) {
         lastMinute = m;
-        meta.textContent = '';
-        meta.appendChild(document.createTextNode(dateFmt.format(now)));
-        const sep = document.createElement('span');
-        sep.className = 'ec-sep';
-        sep.textContent = '·';
-        meta.appendChild(sep);
-        meta.appendChild(document.createTextNode(zoneName(now) + ' local'));
+        renderMeta(now);
         root.setAttribute('aria-label', 'Endurance clock. ' + ariaFmt.format(now));
       }
     }

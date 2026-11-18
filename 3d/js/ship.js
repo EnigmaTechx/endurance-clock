@@ -424,5 +424,5 @@ export function buildShip() {
 
   const docks = modules.map((m) => m.dock);
 
-  return { group, modules, docks, hour, minute, craft, glowTex, setActive, updateModules, setAngles };
+  return { group, modules, docks, hour, minute, craft, trail, glowTex, setActive, updateModules, setAngles };
 }
