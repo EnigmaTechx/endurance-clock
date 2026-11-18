@@ -305,6 +305,28 @@
   opacity: 0.5;
 }
 
+/* Murph's watch line */
+
+.endurance-clock__murph {
+  font-size: clamp(0.62rem, 1.9vmin, 0.85rem);
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  color: #a88c6a;
+}
+
+.endurance-clock__murph .ec-letter {
+  display: inline-block;
+  min-width: 1.4em;
+  text-align: center;
+  color: #5c5247;
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+.endurance-clock__murph .ec-letter.is-sending {
+  color: var(--ec-accent-hot);
+  text-shadow: 0 0 14px rgba(255, 208, 137, 0.8);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ec-module__body,
   .ec-module__shade,

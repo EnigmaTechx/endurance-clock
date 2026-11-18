@@ -296,6 +296,8 @@ function buildSecondCraft(glowTex) {
   const core = glowSprite(glowTex, 0xffffff, 0.5, 0.9);
   core.position.x = -0.25;
   g.add(core);
+  g.userData.engine = engine;
+  g.userData.core = core;
   return g;
 }
 
@@ -376,6 +378,7 @@ export function buildShip() {
   const hullBase = new THREE.Color(COLORS.hull);
   const state = { active: -1, blend: new Array(12).fill(0), pulse: new Array(12).fill(0) };
   let trailDeg = TRAIL_DEG;
+  const trailBoosts = {};
 
   function setActive(index) {
     state.active = index;
@@ -386,10 +389,24 @@ export function buildShip() {
     for (let i = 0; i < 12; i++) state.pulse[i] = values ? values[i] : 0;
   }
 
-  /** 0..1: lengthens and brightens the second craft's trail (countdown's final minute). */
-  function setTrailBoost(k) {
-    trailDeg = TRAIL_DEG + 70 * k;
-    trail.material.opacity = 0.9 + 0.1 * k;
+  /** 0..1 per source: lengthens and brightens the second craft's trail; the strongest source wins. */
+  function setTrailBoost(k, source) {
+    trailBoosts[source || 'default'] = k;
+    let max = 0;
+    for (const key in trailBoosts) max = Math.max(max, trailBoosts[key]);
+    trailDeg = TRAIL_DEG + 70 * max;
+    trail.material.opacity = 0.9 + 0.1 * max;
+  }
+
+  /** 0..1: the second craft's engine flares (Murph's watch). */
+  function setCraftFlare(k) {
+    const engine = craft.userData.engine;
+    const core = craft.userData.core;
+    const s = 1.4 * (1 + 1.6 * k);
+    engine.scale.set(s, s, 1);
+    engine.material.opacity = 0.8 + 0.2 * k;
+    const c = 0.5 * (1 + 1.2 * k);
+    core.scale.set(c, c, 1);
   }
 
   /** Animate module highlight blends; dt in seconds. */
@@ -437,5 +454,5 @@ export function buildShip() {
 
   const docks = modules.map((m) => m.dock);
 
-  return { group, modules, docks, hour, minute, craft, trail, glowTex, setActive, setPulses, setTrailBoost, updateModules, setAngles };
+  return { group, modules, docks, hour, minute, craft, trail, glowTex, setActive, setPulses, setTrailBoost, setCraftFlare, updateModules, setAngles };
 }
