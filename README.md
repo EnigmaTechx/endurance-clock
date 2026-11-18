@@ -137,6 +137,27 @@ container (`--accent`, `--text`, `--text-dim`, `--font`).
 The full page at `/3d/` is a thin consumer of the same widget: `3d/js/main.js`
 mounts it full-screen and wires the nav, alarm panel and tick to it.
 
+#### In a bundled app (React, Vite, webpack)
+
+The repo is also an npm package, so an app that already bundles Three.js can
+import the widget and skip the import map:
+
+```bash
+npm install github:EnigmaTechx/endurance-clock
+```
+
+```js
+import { mount } from 'endurance-clock/3d';
+import 'endurance-clock/3d/css';
+
+const clock = mount(el, { transparent: true, readout: false });
+// later: clock.destroy()
+```
+
+Three.js is a peer dependency (0.160 or newer). The optional page scripts are
+importable for their side effects: `endurance-clock/daylight`, `endurance-clock/tick`,
+`endurance-clock/murph`; the 2D component is `endurance-clock/2d` and `endurance-clock/2d/css`.
+
 Query parameters: `?mode=miller` starts in Miller's planet mode. `?quality=low` turns bloom off and `?quality=high` forces it on
 (it turns off automatically on small low-core devices), `?hour12=true|false` and `?locale=en-GB` override the
 readout. `?demo=dock` shifts the clock so the hour turns a few seconds after
