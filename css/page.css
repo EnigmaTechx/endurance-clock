@@ -75,6 +75,33 @@ body {
   border-color: #ffb25c;
 }
 
+.site-nav__mode {
+  margin-left: 0.6em;
+  padding: 6px 2px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: #6f7a8c;
+  cursor: pointer;
+}
+
+.site-nav__mode:hover,
+.site-nav__mode:focus-visible {
+  color: #c9d2e0;
+  border-color: #ffb25c;
+  outline: none;
+}
+
+.site-nav__mode[hidden] { display: none; }
+
+/* parallax layers (js/parallax.js): promote to their own layers */
+.starfield { will-change: transform; }
+.has-parallax .endurance-clock__svg { will-change: transform; transform-style: preserve-3d; }
+.has-parallax .endurance-clock__gargantua { will-change: transform; }
+
 .stage {
   position: relative;
   z-index: 1;

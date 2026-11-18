@@ -113,8 +113,18 @@ clock.destroy();
 
 Theme it by overriding the `--ec-*` custom properties on `.endurance-clock`.
 
-The starfield (`js/starfield.js`) and the page layout (`css/page.css`) belong to the
-demo page only. The Gargantua glow is part of the component.
+The starfield (`js/starfield.js`), the tilt parallax (`js/parallax.js`) and the
+page layout (`css/page.css`) belong to the demo page only. The Gargantua glow is
+part of the component.
+
+### Tilt parallax
+
+On the 2D page the scene responds to the phone's gyroscope, relative to how you
+are holding it, or to the mouse on desktop. The starfield shifts furthest and
+opposite to the input, the Gargantua glow less so, the ring tilts in perspective,
+and the hands and second craft shift slightly towards the input. iOS requires a
+tap to grant motion access, so a **Tilt** button appears in the nav there and
+only there. Off under `prefers-reduced-motion`.
 
 ## Accessibility
 
