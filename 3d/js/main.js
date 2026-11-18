@@ -16,6 +16,7 @@ import { buildGargantua } from './gargantua.js';
 import { buildStars } from './stars.js';
 import { createReadout } from './readout.js';
 import { buildRanger, dockTimeline, DOCK_LEAD } from './ranger.js';
+import { FACTOR, rateAt, dilatedElapsed, splitElapsed } from './miller.js';
 
 const params = new URLSearchParams(location.search);
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -219,6 +220,80 @@ const readout = createReadout(clockRoot, {
   locale: params.get('locale') || undefined
 });
 
+// ---------- Miller's planet ----------
+
+const miller = { on: false, t0: 0 };
+const millerToggle = document.getElementById('miller-toggle');
+const millerMeta = clockRoot.querySelector('.clock3d__meta--miller');
+const timeEl = clockRoot.querySelector('.clock3d__time');
+const locale = params.get('locale') || undefined;
+const earthDateFmt = new Intl.DateTimeFormat(locale, { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+const ownTimeFmt = new Intl.DateTimeFormat(locale, {
+  hour: '2-digit', minute: '2-digit', second: '2-digit',
+  hour12: params.has('hour12') ? params.get('hour12') === 'true' : undefined
+});
+const nf = new Intl.NumberFormat(locale);
+let savedTimeHTML = '';
+let lastMillerHours = -1;
+
+function setMiller(on) {
+  if (on === miller.on) return;
+  miller.on = on;
+  miller.t0 = Date.now();
+  millerToggle.setAttribute('aria-pressed', String(on));
+  clockRoot.classList.toggle('clock3d--miller', on);
+  millerMeta.hidden = !on;
+  lastMillerHours = -1;
+  if (on) {
+    savedTimeHTML = timeEl.innerHTML;
+    timeEl.textContent = '';
+  } else {
+    timeEl.innerHTML = savedTimeHTML;
+    readout.reset();
+    ranger.group.visible = true;
+  }
+  const url = new URL(location.href);
+  if (on) url.searchParams.set('mode', 'miller'); else url.searchParams.delete('mode');
+  history.replaceState(null, '', url);
+  frameCamera();   // the readout gained or lost a line
+}
+
+millerToggle.addEventListener('click', () => setMiller(!miller.on));
+
+/** Real elapsed seconds in Miller mode. */
+const millerTau = () => (Date.now() - miller.t0) / 1000;
+
+/** The time the Endurance clock shows: real time, or dilated in Miller mode. */
+function displayDate() {
+  const real = nowDate();
+  if (!miller.on) return real;
+  return new Date(miller.t0 + timeOffset + dilatedElapsed(millerTau()) * 1000);
+}
+
+function updateMillerReadout(realNow, shown) {
+  const el = splitElapsed(dilatedElapsed(millerTau()));
+  if (el.hours !== lastMillerHours) {
+    lastMillerHours = el.hours;
+    timeEl.textContent = '';
+    const add = (n, unit) => {
+      const v = document.createElement('span');
+      v.textContent = String(n).padStart(unit === 'y' ? 1 : 2, '0');
+      const u = document.createElement('span');
+      u.className = 'ec-unit';
+      u.textContent = unit;
+      timeEl.appendChild(v);
+      timeEl.appendChild(u);
+    };
+    add(el.years, 'y');
+    add(el.days, 'd');
+    add(el.hours, 'h');
+    millerMeta.textContent = 'Miller\u2019s planet \u00b7 1 h here = 7 y there (\u00d7' + nf.format(Math.round(FACTOR)) + ') \u00b7 your time ' + ownTimeFmt.format(realNow);
+    clockRoot.setAttribute('aria-label', 'Endurance clock in Miller\u2019s planet mode. ' +
+      el.years + ' years, ' + el.days + ' days and ' + el.hours + ' hours have passed on the Endurance.');
+  }
+  readout.updateMeta(shown, 'Endurance date');
+}
+
 function timeAngles(now) {
   const ms = now.getMilliseconds();
   const s = now.getSeconds();
@@ -234,21 +309,46 @@ function timeAngles(now) {
 
 const threeClock = new THREE.Clock();
 let first = true;
+let skyAngle = 0;
+
+if (params.get('mode') === 'miller') setMiller(true);
 
 function frame() {
   const dt = Math.min(threeClock.getDelta(), 0.1);
   const t = threeClock.elapsedTime;
-  const now = nowDate();
+  const real = nowDate();
+  const now = displayDate();
 
   const angles = timeAngles(now);
   ship.setAngles(angles.hourDeg, angles.minuteDeg, angles.secondDeg);
   ship.setActive(angles.activeModule);
   ship.updateModules(dt, first || reduceMotion);
-  readout.update(now);
-  ranger.update(dockTimeline(now, reduceMotion), ship.docks, t);
 
-  // sky wheels around the ring axis; the ring itself stays put
-  if (!reduceMotion) sky.rotation.z = (t / SKY_PERIOD) * Math.PI * 2;
+  if (miller.on) {
+    const rate = rateAt(millerTau());
+    // once the rate is past reading, the minute hand and second craft go;
+    // the Ranger is on the planet with the viewer
+    const fast = rate > 40;
+    ship.minute.visible = !fast;
+    ship.craft.visible = !fast;
+    ship.trail.visible = !fast;
+    ranger.group.visible = false;
+    updateMillerReadout(real, now);
+  } else {
+    ship.minute.visible = true;
+    ship.craft.visible = true;
+    ship.trail.visible = true;
+    readout.update(now);
+    ranger.update(dockTimeline(now, reduceMotion), ship.docks, t);
+  }
+
+  // sky wheels around the ring axis; the ring itself stays put. In Miller
+  // mode the ship's spin reads faster too, ramping with the clock.
+  if (!reduceMotion) {
+    const skyRate = miller.on ? 1 + 59 * Math.min(1, (rateAt(millerTau()) - 1) / (FACTOR - 1)) : 1;
+    skyAngle += dt * (Math.PI * 2 / SKY_PERIOD) * skyRate;
+    sky.rotation.z = skyAngle;
+  }
 
   // idle sway, blended with pointer tilt
   const idle = reduceMotion ? 0 : THREE.MathUtils.smoothstep((performance.now() - tilt.idleSince) / 1000, 2.5, 7);
