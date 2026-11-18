@@ -143,6 +143,17 @@ The 2D component reads the palette through custom properties (`--ec-disc-rgb`,
 `--ec-disc-alpha`, `--ec-hull`, `--ec-hand`) and has fixed defaults without the
 script.
 
+### Tick sound
+
+`js/tick.js` adds a quiet tick on every second, from the **Tick** button in either
+nav. It is synthesised in WebAudio (a filtered noise burst with a tiny click, a
+lower tock on alternate seconds) and scheduled against the wall clock, so it lands
+on the same second boundaries the hands and the orbiting craft follow. Off by
+default and remembered; because browsers only start audio after a gesture, a
+remembered-on tick begins at your first tap or key press. In Miller's planet mode
+it becomes a deeper, slower tick once per Earth day of dilated time, every 1.4 s at
+the film's ratio, a nod to the score.
+
 ### Tilt parallax
 
 On the 2D page the scene responds to the phone's gyroscope, relative to how you

@@ -16,7 +16,7 @@ import { buildGargantua } from './gargantua.js';
 import { buildStars } from './stars.js';
 import { createReadout } from './readout.js';
 import { buildRanger, dockTimeline, DOCK_LEAD } from './ranger.js';
-import { FACTOR, rateAt, dilatedElapsed, splitElapsed } from './miller.js';
+import { FACTOR, rateAt, dilatedElapsed, splitElapsed, RAMP_SECONDS } from './miller.js';
 import { createAlarm } from './alarm.js';
 
 const params = new URLSearchParams(location.search);
@@ -305,6 +305,20 @@ function setMiller(on) {
   if (on) url.searchParams.set('mode', 'miller'); else url.searchParams.delete('mode');
   history.replaceState(null, '', url);
   frameCamera();   // the readout gained or lost a line
+  setTickSource();
+}
+
+/** On Miller's planet the tick marks each Earth day of dilated time (every 1.4 s at the film's ratio). */
+function setTickSource() {
+  if (!window.Tick) return;
+  if (!miller.on) { window.Tick.setSource(null); return; }
+  const periodMs = 86400000 / FACTOR;
+  // past the ramp the dilated clock is linear: D = t0 + (tau + (K-1)(tau - R/2)) s.
+  // Real time of a local midnight D_m on that line, used as the anchor:
+  const d0 = new Date(miller.t0 + timeOffset);
+  const midnight = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate()).getTime();
+  const tau = ((midnight - (miller.t0 + timeOffset)) / 1000 + (FACTOR - 1) * RAMP_SECONDS / 2) / FACTOR;
+  window.Tick.setSource({ periodMs, anchorMs: miller.t0 + tau * 1000, style: 'miller' });
 }
 
 millerToggle.addEventListener('click', () => setMiller(!miller.on));

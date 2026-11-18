@@ -110,6 +110,12 @@ body {
 
 .site-nav__mode[hidden] { display: none; }
 
+.site-nav__mode[aria-pressed="true"] {
+  color: #ffd089;
+  border-color: #ffd089;
+  text-shadow: 0 0 12px rgba(255, 208, 137, 0.6);
+}
+
 .site-nav__mode[disabled] {
   cursor: default;
   color: #4f5866;
