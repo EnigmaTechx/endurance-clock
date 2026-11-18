@@ -33,7 +33,9 @@ function discMaterial(inner, outer, doppler) {
       uTime: { value: 0 },
       uInner: { value: inner },
       uOuter: { value: outer },
-      uDoppler: { value: doppler }
+      uDoppler: { value: doppler },
+      uWarm: { value: 1 },     // 0 white-hot .. 1 deep orange (time of day)
+      uBright: { value: 1 }
     },
     vertexShader: /* glsl */`
       varying vec2 vPos;
@@ -43,7 +45,7 @@ function discMaterial(inner, outer, doppler) {
       }
     `,
     fragmentShader: /* glsl */`
-      uniform float uTime, uInner, uOuter, uDoppler;
+      uniform float uTime, uInner, uOuter, uDoppler, uWarm, uBright;
       varying vec2 vPos;
       ${NOISE_GLSL}
       void main() {
@@ -63,8 +65,8 @@ function discMaterial(inner, outer, doppler) {
         float fadeOut = 1.0 - smoothstep(0.7, 1.0, t);
 
         vec3 hot = vec3(1.0, 0.95, 0.85);
-        vec3 mid = vec3(1.0, 0.62, 0.26);
-        vec3 cool = vec3(0.55, 0.16, 0.05);
+        vec3 mid = mix(vec3(1.0, 0.86, 0.66), vec3(1.0, 0.62, 0.26), uWarm);
+        vec3 cool = mix(vec3(0.75, 0.45, 0.25), vec3(0.55, 0.16, 0.05), uWarm);
         vec3 col = mix(hot, mid, smoothstep(0.0, 0.3, t));
         col = mix(col, cool, smoothstep(0.3, 1.0, t));
 
@@ -72,7 +74,7 @@ function discMaterial(inner, outer, doppler) {
         float beam = 1.0 + uDoppler * sin(a);
 
         float alpha = fadeIn * fadeOut * clamp(bands, 0.0, 1.3);
-        gl_FragColor = vec4(col * bright * bands * beam, alpha);
+        gl_FragColor = vec4(col * bright * bands * beam * uBright, alpha);
       }
     `,
     transparent: true,
@@ -84,7 +86,7 @@ function discMaterial(inner, outer, doppler) {
 
 function haloMaterial(ringR) {
   return new THREE.ShaderMaterial({
-    uniforms: { uTime: { value: 0 }, uR: { value: ringR } },
+    uniforms: { uTime: { value: 0 }, uR: { value: ringR }, uWarm: { value: 1 }, uBright: { value: 1 } },
     vertexShader: /* glsl */`
       varying vec2 vPos;
       void main() {
@@ -93,7 +95,7 @@ function haloMaterial(ringR) {
       }
     `,
     fragmentShader: /* glsl */`
-      uniform float uTime, uR;
+      uniform float uTime, uR, uWarm, uBright;
       varying vec2 vPos;
       ${NOISE_GLSL}
       void main() {
@@ -109,8 +111,9 @@ function haloMaterial(ringR) {
         float topBottom = 0.35 + 0.65 * abs(sin(a));
         float beam = 1.0 + 0.5 * cos(a);
         float v = (photon + band * n * topBottom) * beam;
-        vec3 col = mix(vec3(1.0, 0.6, 0.25), vec3(1.0, 0.92, 0.8), clamp(photon, 0.0, 1.0));
-        gl_FragColor = vec4(col * v, clamp(v, 0.0, 1.0));
+        vec3 warm = mix(vec3(1.0, 0.82, 0.6), vec3(1.0, 0.6, 0.25), uWarm);
+        vec3 col = mix(warm, vec3(1.0, 0.92, 0.8), clamp(photon, 0.0, 1.0));
+        gl_FragColor = vec4(col * v * uBright, clamp(v, 0.0, 1.0));
       }
     `,
     transparent: true,
@@ -159,9 +162,15 @@ export function buildGargantua() {
   haze.position.z = -1;
   group.add(haze);
 
-  function update(time) {
+  function update(time, warm, bright) {
     discMat.uniforms.uTime.value = time;
     haloMat.uniforms.uTime.value = time;
+    if (warm !== undefined) {
+      discMat.uniforms.uWarm.value = warm;
+      haloMat.uniforms.uWarm.value = warm;
+      discMat.uniforms.uBright.value = bright;
+      haloMat.uniforms.uBright.value = bright;
+    }
   }
 
   /** Keep the halo facing the camera (billboard around the shadow). */

@@ -16,6 +16,9 @@
   --ec-text: #c9d2e0;
   --ec-text-dim: #6f7a8c;
   --ec-font: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  /* Gargantua glow colour and strength; js/daylight.js shifts these through the day */
+  --ec-disc-rgb: 255, 150, 70;
+  --ec-disc-alpha: 1;
 
   position: relative;
   display: grid;
@@ -65,14 +68,14 @@
   background: radial-gradient(
     ellipse at center,
     transparent 36%,
-    rgba(255, 170, 90, 0.08) 42%,
-    rgba(255, 150, 70, 0.55) 48%,
-    rgba(255, 120, 50, 0.3) 54%,
-    rgba(255, 90, 40, 0.08) 62%,
+    rgba(var(--ec-disc-rgb), 0.08) 42%,
+    rgba(var(--ec-disc-rgb), 0.55) 48%,
+    rgba(var(--ec-disc-rgb), 0.3) 54%,
+    rgba(var(--ec-disc-rgb), 0.08) 62%,
     transparent 70%
   );
   filter: blur(10px);
-  opacity: 0.9;
+  opacity: calc(0.9 * var(--ec-disc-alpha));
 }
 
 /* the lensed halo around the shadow */
@@ -84,11 +87,12 @@
     circle at center,
     rgba(4, 6, 12, 0.95) 38%,
     rgba(40, 20, 12, 0.9) 44%,
-    rgba(255, 160, 80, 0.35) 49%,
-    rgba(255, 130, 60, 0.12) 54%,
+    rgba(var(--ec-disc-rgb), 0.35) 49%,
+    rgba(var(--ec-disc-rgb), 0.12) 54%,
     transparent 62%
   );
   filter: blur(6px);
+  opacity: var(--ec-disc-alpha);
 }
 
 /* ---- Ship ---- */
@@ -148,6 +152,11 @@
   stroke: var(--ec-hull-edge);
   stroke-width: 2;
   transition: fill 0.9s ease, stroke 0.9s ease;
+}
+
+.ec-hand-hour,
+.ec-hand-minute {
+  transition: fill 2s ease;
 }
 
 .ec-module__shade {

@@ -47,7 +47,8 @@ export function buildStars(count, reduceMotion) {
     uniforms: {
       uTime: { value: 0 },
       uPixelRatio: { value: 1 },
-      uTwinkle: { value: reduceMotion ? 0 : 1 }
+      uTwinkle: { value: reduceMotion ? 0 : 1 },
+      uBright: { value: 1 }
     },
     vertexShader: /* glsl */`
       attribute float aSize;
@@ -65,13 +66,14 @@ export function buildStars(count, reduceMotion) {
       }
     `,
     fragmentShader: /* glsl */`
+      uniform float uBright;
       varying vec3 vColor;
       varying float vAlpha;
       void main() {
         vec2 c = gl_PointCoord - 0.5;
         float d = length(c) * 2.0;
         float a = smoothstep(1.0, 0.25, d);
-        gl_FragColor = vec4(vColor, a * vAlpha);
+        gl_FragColor = vec4(vColor, min(1.0, a * vAlpha * uBright));
       }
     `,
     vertexColors: true,
@@ -85,9 +87,10 @@ export function buildStars(count, reduceMotion) {
 
   return {
     points,
-    update(time, pixelRatio) {
+    update(time, pixelRatio, bright) {
       mat.uniforms.uTime.value = time;
       mat.uniforms.uPixelRatio.value = pixelRatio;
+      if (bright !== undefined) mat.uniforms.uBright.value = bright;
     }
   };
 }

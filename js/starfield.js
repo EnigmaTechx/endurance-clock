@@ -19,6 +19,7 @@
   var stars = [];
   var width = 0, height = 0, dpr = 1;
   var last = 0;
+  var brightness = 1;   // set by js/daylight.js: brighter at night, dimmer by day
 
   function rand(a, b) { return a + Math.random() * (b - a); }
 
@@ -64,9 +65,9 @@
         if (s.y < -4) s.y += height + 8;
         if (s.y > height + 4) s.y -= height + 8;
       }
-      var a = s.base;
+      var a = s.base * brightness;
       if (!reduceMotion) a *= 0.75 + 0.25 * Math.sin(t / 1000 * s.twinkle + s.phase);
-      ctx.globalAlpha = a;
+      ctx.globalAlpha = Math.min(1, a);
       ctx.fillStyle = s.warm ? '#ffd9b0' : '#dfe8ff';
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
@@ -85,4 +86,11 @@
   window.addEventListener('resize', resize);
   resize();
   if (!reduceMotion) requestAnimationFrame(frame);
+
+  window.Starfield = {
+    setBrightness: function (b) {
+      brightness = b;
+      if (reduceMotion) draw(performance.now(), 0);
+    }
+  };
 })();
