@@ -42,6 +42,8 @@
       <a href="3d/">3D</a>
       <button type="button" id="tilt-enable" class="site-nav__mode" hidden
               title="Allow motion access so the clock responds to tilting the phone">Tilt</button>
+      <button type="button" id="tick-toggle" class="site-nav__mode" aria-pressed="false"
+              title="A quiet tick on every second">Tick</button>
     </span>
   </nav>
 
@@ -55,6 +57,7 @@
   <script src="js/endurance-clock.js"></script>
   <script src="js/parallax.js"></script>
   <script src="js/daylight.js"></script>
+  <script src="js/tick.js"></script>
   <script>
     if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === '127.0.0.1' || location.hostname === 'localhost')) {
       navigator.serviceWorker.register('sw.js').catch(function () {});

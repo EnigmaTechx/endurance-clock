@@ -49,6 +49,8 @@
               title="Miller's planet: one hour here is seven years on the Endurance">Miller</button>
       <button type="button" id="alarm-toggle" class="site-nav__mode" aria-expanded="false" aria-controls="alarm-panel"
               title="Set an alarm or a countdown">Alarm</button>
+      <button type="button" id="tick-toggle" class="site-nav__mode" aria-pressed="false"
+              title="A quiet tick on every second (once per Earth day on Miller's planet)">Tick</button>
     </span>
   </nav>
 
@@ -94,6 +96,7 @@
   </div>
 
   <script src="../js/daylight.js"></script>
+  <script src="../js/tick.js"></script>
   <script type="module" src="js/main.js"></script>
   <script>
     if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === '127.0.0.1' || location.hostname === 'localhost')) {
