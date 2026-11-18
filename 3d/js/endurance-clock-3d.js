@@ -211,7 +211,7 @@ export function mount(container, options) {
     composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, camera));
     // threshold above 1.0 so only emissive surfaces bloom, never lit hull
-    bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.5, 0.2, 1.15);
+    bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.5, 0.2, 1.35);
     composer.addPass(bloomPass);
     composer.addPass(new OutputPass());
   }

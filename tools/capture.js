@@ -29,7 +29,7 @@ const server = http.createServer((req, res) => {
 });
 
 const HIDE_CHROME = `
-  .site-nav, .clock3d, .endurance-clock__readout, .site-hint, .panel { display: none !important; }
+  .site-nav, .clock3d, .ec3d__overlay, .endurance-clock__readout, .site-hint, .panel { display: none !important; }
 `;
 
 async function routeThree(page) {
@@ -60,8 +60,8 @@ async function routeThree(page) {
     await page.waitForTimeout(3000);
     await page.evaluate(() => {
       const E = window.__endurance;
-      E.camera.position.multiplyScalar(0.74);
-      E.camera.lookAt(0, 0.3, 0);
+      E.camera.position.multiplyScalar(0.92);
+      E.camera.lookAt(0, 0.2, 0);
     });
     await page.waitForTimeout(1200);
     await page.screenshot({ path: path.join(OUT, 'og.png') });
