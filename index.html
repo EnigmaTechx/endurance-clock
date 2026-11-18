@@ -10,7 +10,9 @@
   <link rel="stylesheet" href="css/endurance-clock.css">
 </head>
 <body>
-  <canvas id="starfield" class="starfield" aria-hidden="true"></canvas>
+  <div class="starfield-wrap" aria-hidden="true">
+    <canvas id="starfield" class="starfield"></canvas>
+  </div>
 
   <nav class="site-nav" aria-label="Clock versions">
     <span class="site-nav__brand">Endurance</span>
@@ -21,6 +23,8 @@
               title="Allow motion access so the clock responds to tilting the phone">Tilt</button>
     </span>
   </nav>
+
+  <p id="site-hint" class="site-hint" role="status" hidden></p>
 
   <main class="stage">
     <div class="endurance-clock" data-endurance-clock></div>

@@ -16,6 +16,7 @@
   var starfield = document.getElementById('starfield');
   var clock = document.querySelector('.endurance-clock');
   var tiltButton = document.getElementById('tilt-enable');
+  var hint = document.getElementById('site-hint');
   if (!clock) return;
 
   var svg = null, gargantua = null, hands = null, seconds = null;
@@ -48,6 +49,25 @@
     target.x = (e.clientX / window.innerWidth) * 2 - 1;
     target.y = (e.clientY / window.innerHeight) * 2 - 1;
     schedule();
+  }
+
+  // Touch fallback: a finger dragged across the page steers the layers
+  // (the gyroscope takes over as soon as it delivers readings)
+  var touchId = null;
+  function onTouchDown(e) {
+    if (e.pointerType !== 'touch' || usingOrientation) return;
+    if (e.target.closest && e.target.closest('a, button')) return;
+    touchId = e.pointerId;
+    setTargetFromPointer(e);
+  }
+  function onTouchMove(e) {
+    if (e.pointerId !== touchId || usingOrientation) return;
+    setTargetFromPointer(e);
+  }
+  function onTouchUp(e) {
+    if (e.pointerId !== touchId) return;
+    touchId = null;
+    if (!usingOrientation) { target.x = 0; target.y = 0; schedule(); }
   }
 
   function onOrientation(e) {
@@ -107,31 +127,72 @@
 
   window.addEventListener('pointermove', function (e) {
     if (e.pointerType === 'mouse') setTargetFromPointer(e);
+    else onTouchMove(e);
   });
+  window.addEventListener('pointerdown', onTouchDown);
+  window.addEventListener('pointerup', onTouchUp);
+  window.addEventListener('pointercancel', onTouchUp);
   document.addEventListener('pointerleave', function () {
     if (!usingOrientation) { target.x = 0; target.y = 0; schedule(); }
   });
 
   // Listen straight away: Android and desktop browsers deliver readings (or
-  // nothing) without asking. iOS delivers nothing until the page asks for
-  // motion access from a user gesture, so if this is a touch device that
-  // offers requestPermission and no reading arrives, show the Tilt button.
+  // nothing) without asking; iOS delivers nothing until the page asks for
+  // motion access from a user gesture. On a touch device with no reading
+  // after a moment, offer a Tilt button: it asks where asking is possible,
+  // and otherwise explains how to allow motion sensors for the site.
   var canRequest = typeof DeviceOrientationEvent !== 'undefined' &&
     typeof DeviceOrientationEvent.requestPermission === 'function';
   var isTouch = navigator.maxTouchPoints > 0;
+  var isBrave = !!(navigator.brave && typeof navigator.brave.isBrave === 'function');
+  var isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
   if ('DeviceOrientationEvent' in window) {
     window.addEventListener('deviceorientation', onOrientation);
   }
 
-  if (canRequest && isTouch && tiltButton) {
+  function showHint(text) {
+    if (!hint) return;
+    hint.textContent = text;
+    hint.hidden = false;
+    clearTimeout(showHint.timer);
+    showHint.timer = setTimeout(function () { hint.hidden = true; }, 9000);
+  }
+
+  function blockedMessage() {
+    if (isIOS) return 'Motion access was not granted. Allow Motion & Orientation Access for this browser in iOS Settings, then reload.';
+    if (isBrave) return 'Brave blocks motion sensors by default. Allow them for this site under Settings \u2192 Site settings \u2192 Motion sensors, then reload. Dragging a finger across the page works meanwhile.';
+    return 'This browser is not sharing motion sensors with the page. Allow motion sensors for this site in its settings, then reload. Dragging a finger across the page works meanwhile.';
+  }
+
+  function blocked() {
+    tiltButton.textContent = 'Tilt off';
+    tiltButton.disabled = true;
+    tiltButton.title = blockedMessage();
+    showHint(blockedMessage());
+  }
+
+  function awaitReadings() {
+    setTimeout(function () {
+      if (usingOrientation) tiltButton.hidden = true;
+      else blocked();
+    }, 1500);
+  }
+
+  if (isTouch && tiltButton) {
     setTimeout(function () {
       if (usingOrientation) return;
       tiltButton.hidden = false;
       tiltButton.addEventListener('click', function () {
-        DeviceOrientationEvent.requestPermission().then(function (state) {
-          if (state === 'granted') tiltButton.hidden = true;
-        }).catch(function () { /* declined or unavailable; keep the mouse path */ });
+        if (canRequest) {
+          DeviceOrientationEvent.requestPermission().then(function (state) {
+            if (state === 'granted') awaitReadings();
+            else blocked();
+          }).catch(blocked);
+        } else {
+          awaitReadings();
+        }
       });
     }, 1500);
   }
