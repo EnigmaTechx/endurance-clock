@@ -130,9 +130,19 @@
       tiltButton.hidden = false;
       tiltButton.addEventListener('click', function () {
         DeviceOrientationEvent.requestPermission().then(function (state) {
-          if (state === 'granted') tiltButton.hidden = true;
-        }).catch(function () { /* declined or unavailable; keep the mouse path */ });
+          if (state === 'granted') {
+            tiltButton.hidden = true;
+          } else {
+            blocked();
+          }
+        }).catch(blocked);
       });
+      function blocked() {
+        // declined, or motion sensors are off in the browser's settings
+        tiltButton.textContent = 'Tilt off';
+        tiltButton.disabled = true;
+        tiltButton.title = 'Motion access was not granted. In iOS, allow Motion & Orientation Access for this browser in Settings, then reload.';
+      }
     }, 1500);
   }
 

@@ -124,7 +124,8 @@ are holding it, or to the mouse on desktop. The starfield shifts furthest and
 opposite to the input, the Gargantua glow less so, the ring tilts in perspective,
 and the hands and second craft shift slightly towards the input. iOS requires a
 tap to grant motion access, so a **Tilt** button appears in the nav there and
-only there. Off under `prefers-reduced-motion`.
+only there; if access is refused, or motion sensors are off in the browser's
+settings, it reads **Tilt off**. Off under `prefers-reduced-motion`.
 
 ## Accessibility
 
