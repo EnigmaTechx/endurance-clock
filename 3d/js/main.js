@@ -15,6 +15,7 @@ import { buildShip, ORBIT_R } from './ship.js';
 import { buildGargantua } from './gargantua.js';
 import { buildStars } from './stars.js';
 import { createReadout } from './readout.js';
+import { buildRanger, dockTimeline, DOCK_LEAD } from './ranger.js';
 
 const params = new URLSearchParams(location.search);
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -25,6 +26,16 @@ const useBloom = !lowQuality;
 
 const SKY_PERIOD = 600;            // seconds per revolution of the sky (ship spin, slowed)
 const FRAME_HALF_EXTENT = ORBIT_R + 1.6;
+
+// ?demo=dock shifts the clock so the hour turns a few seconds after load,
+// which plays the Ranger's docking sequence without waiting for the hour
+let timeOffset = 0;
+if (params.get('demo') === 'dock') {
+  const d = new Date();
+  const sec = d.getMinutes() * 60 + d.getSeconds() + d.getMilliseconds() / 1000;
+  timeOffset = ((3600 - DOCK_LEAD - 4) - sec) * 1000;
+}
+const nowDate = () => new Date(Date.now() + timeOffset);
 
 const canvas = document.getElementById('scene');
 const clockRoot = document.getElementById('clock');
@@ -68,6 +79,9 @@ sky.add(gargantua.group);
 
 const ship = buildShip();
 rig.add(ship.group);
+
+const ranger = buildRanger(ship.glowTex);
+ship.group.add(ranger.group);
 
 // ---------- lights ----------
 
@@ -224,13 +238,14 @@ let first = true;
 function frame() {
   const dt = Math.min(threeClock.getDelta(), 0.1);
   const t = threeClock.elapsedTime;
-  const now = new Date();
+  const now = nowDate();
 
   const angles = timeAngles(now);
   ship.setAngles(angles.hourDeg, angles.minuteDeg, angles.secondDeg);
   ship.setActive(angles.activeModule);
   ship.updateModules(dt, first || reduceMotion);
   readout.update(now);
+  ranger.update(dockTimeline(now, reduceMotion), ship.docks, t);
 
   // sky wheels around the ring axis; the ring itself stays put
   if (!reduceMotion) sky.rotation.z = (t / SKY_PERIOD) * Math.PI * 2;
@@ -267,7 +282,7 @@ if (reduceMotion) {
   // step once per second, aligned to the clock
   const step = () => {
     frame();
-    setTimeout(step, 1000 - new Date().getMilliseconds() + 5);
+    setTimeout(step, 1000 - nowDate().getMilliseconds() + 5);
   };
   step();
 } else {
@@ -275,7 +290,7 @@ if (reduceMotion) {
 }
 
 // handle for poking at the scene from devtools
-window.__endurance = { scene, camera, renderer, composer, bloomPass, rig, sky, ship, stars, gargantua, key, rim, front };
+window.__endurance = { scene, camera, renderer, composer, bloomPass, rig, sky, ship, ranger, stars, gargantua, key, rim, front };
 
 // WebGL context can still be lost after a successful start
 canvas.addEventListener('webglcontextlost', (e) => {
