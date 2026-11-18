@@ -117,6 +117,22 @@ The starfield (`js/starfield.js`), the tilt parallax (`js/parallax.js`) and the
 page layout (`css/page.css`) belong to the demo page only. The Gargantua glow is
 part of the component.
 
+### Time-of-day lighting
+
+`js/daylight.js` turns the viewer's local time into a sun elevation and blends
+three looks from it, on both pages: **night** is cool, blue and dim with brighter
+stars; **twilight** is a strong golden key light with Gargantua at its most
+orange; **day** is bright and neutral with Gargantua whiter. Sunrise and sunset
+come from a built-in schedule (06:45 / 18:15) unless `?lat=&lon=` are given, in
+which case the NOAA sunrise equation is used; if the browser has already granted
+the page location access it is used too, but the page never asks for it.
+`?sun=-1..1` forces a phase (−1 midnight, 0 sunrise/sunset, 1 noon) for a look.
+In Miller's planet mode the lighting stays on the viewer's real time.
+
+The 2D component reads the palette through custom properties (`--ec-disc-rgb`,
+`--ec-disc-alpha`, `--ec-hull`, `--ec-hand`) and has fixed defaults without the
+script.
+
 ### Tilt parallax
 
 On the 2D page the scene responds to the phone's gyroscope, relative to how you

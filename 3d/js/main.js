@@ -86,7 +86,8 @@ ship.group.add(ranger.group);
 
 // ---------- lights ----------
 
-scene.add(new THREE.HemisphereLight(0x5a6c90, 0x05070c, 0.75));
+const hemi = new THREE.HemisphereLight(0x5a6c90, 0x05070c, 0.75);
+scene.add(hemi);
 
 const key = new THREE.DirectionalLight(0xffb27a, 1.7);   // from Gargantua, follows it
 scene.add(key);
@@ -99,6 +100,32 @@ scene.add(rim);
 const front = new THREE.DirectionalLight(0xffffff, 0.35);
 front.position.set(0, 4, 30);
 scene.add(front);
+
+// ---------- time-of-day lighting (shared with the 2D page via ../js/daylight.js) ----------
+
+const daylight = window.Daylight || null;
+const _c = new THREE.Color();
+const setColor = (color, rgb) => color.setRGB(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255, THREE.SRGBColorSpace);
+let lastDaylightAt = -Infinity;
+let daylightPalette = null;
+
+/** Blend lights, exposure, Gargantua temperature and star brightness from the viewer's real time. */
+function applyDaylight(realNow, force) {
+  if (!daylight) return;
+  const ms = realNow.getTime();
+  if (!force && ms - lastDaylightAt < 1000) return;   // once a second is plenty
+  lastDaylightAt = ms;
+  const p = daylight.at(realNow);
+  daylightPalette = p;
+  setColor(key.color, p.key);
+  key.intensity = p.keyIntensity;
+  setColor(hemi.color, p.sky);
+  setColor(hemi.groundColor, p.ground);
+  hemi.intensity = p.hemiIntensity;
+  setColor(rim.color, p.rim);
+  rim.intensity = p.rimIntensity;
+  renderer.toneMappingExposure = p.exposure;
+}
 
 // ---------- post-processing ----------
 
@@ -360,12 +387,13 @@ function frame() {
   rig.rotation.x = tilt.x;
   rig.rotation.y = tilt.y;
 
-  // key light follows Gargantua
+  // key light follows Gargantua; its colour follows the viewer's time of day
+  applyDaylight(real, first);
   gargantua.group.getWorldPosition(key.position);
   key.position.normalize().multiplyScalar(60);
   gargantua.face(camera);
-  gargantua.update(t);
-  stars.update(t, pixelRatio());
+  gargantua.update(t, daylightPalette ? daylightPalette.discWarm : undefined, daylightPalette ? daylightPalette.discBright : 1);
+  stars.update(t, pixelRatio(), daylightPalette ? daylightPalette.stars : undefined);
 
   if (first) frameCamera();   // the readout now has text, so its height is known
 
@@ -390,7 +418,8 @@ if (reduceMotion) {
 }
 
 // handle for poking at the scene from devtools
-window.__endurance = { scene, camera, renderer, composer, bloomPass, rig, sky, ship, ranger, stars, gargantua, key, rim, front };
+window.__endurance = { scene, camera, renderer, composer, bloomPass, rig, sky, ship, ranger, stars, gargantua, key, rim, hemi, front, daylight: () => daylightPalette };
+if (daylight) daylight.tryKnownLocation();
 
 // WebGL context can still be lost after a successful start
 canvas.addEventListener('webglcontextlost', (e) => {
