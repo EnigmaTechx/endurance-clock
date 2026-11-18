@@ -27,6 +27,7 @@
   <meta name="twitter:title" content="Endurance Clock · 3D">
   <meta name="twitter:description" content="The Endurance from Interstellar as a 3D clock. The ring holds still while the sky and Gargantua wheel past; a Ranger docks on the hour.">
   <meta name="twitter:image" content="https://clock.enigmatech.dev/assets/og.png">
+  <link rel="stylesheet" href="../css/nav.css">
   <link rel="stylesheet" href="css/endurance-clock-3d.css">
   <link rel="stylesheet" href="css/clock3d.css">
   <script type="importmap">
@@ -44,12 +45,15 @@
     <span class="site-nav__links">
       <a href="../">2D</a>
       <span aria-current="page">3D</span>
-      <button type="button" id="miller-toggle" class="site-nav__mode" aria-pressed="false"
-              title="Miller's planet: one hour here is seven years on the Endurance">Miller</button>
-      <button type="button" id="alarm-toggle" class="site-nav__mode" aria-expanded="false" aria-controls="alarm-panel"
-              title="Set an alarm or a countdown">Alarm</button>
-      <button type="button" id="tick-toggle" class="site-nav__mode" aria-pressed="false"
-              title="A quiet tick on every second (once per Earth day on Miller's planet)">Tick</button>
+      <button type="button" class="site-nav__menu" aria-expanded="false" aria-controls="nav-modes">Menu</button>
+      <span class="site-nav__modes" id="nav-modes">
+        <button type="button" id="miller-toggle" class="site-nav__mode" aria-pressed="false"
+                title="Miller's planet: one hour here is seven years on the Endurance">Miller</button>
+        <button type="button" id="alarm-toggle" class="site-nav__mode" aria-expanded="false" aria-controls="alarm-panel"
+                title="Set an alarm or a countdown">Alarm</button>
+        <button type="button" id="tick-toggle" class="site-nav__mode" aria-pressed="false"
+                title="A quiet tick on every second (once per Earth day on Miller's planet)">Tick</button>
+      </span>
     </span>
   </nav>
 
@@ -87,6 +91,7 @@
 
   <script src="../js/daylight.js"></script>
   <script src="../js/tick.js"></script>
+  <script src="../js/nav.js"></script>
   <script type="module" src="js/main.js"></script>
   <script>
     if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === '127.0.0.1' || location.hostname === 'localhost')) {

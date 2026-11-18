@@ -1,0 +1,168 @@
+/* Site chrome shared by the 2D and 3D pages: the top nav, its mode buttons,
+   the mobile menu that wraps them, and the small hint toast. */
+
+.site-nav {
+  position: fixed;
+  z-index: 5;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: calc(14px + env(safe-area-inset-top)) 20px 0;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #6f7a8c;
+  pointer-events: none;
+}
+
+.site-nav__brand { opacity: 0.8; }
+
+.site-nav__links {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1.2em;
+  pointer-events: auto;
+}
+
+.site-nav__links a,
+.site-nav__links span[aria-current] {
+  color: #6f7a8c;
+  text-decoration: none;
+  padding: 6px 2px;
+  border-bottom: 1px solid transparent;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.site-nav__links a:hover,
+.site-nav__links a:focus-visible {
+  color: #c9d2e0;
+  border-color: #ffb25c;
+  outline: none;
+}
+
+.site-nav__links [aria-current="page"] {
+  color: #ffb25c;
+  border-color: #ffb25c;
+}
+
+/* the mode buttons: inline on wide screens, a dropdown on phones */
+.site-nav__modes {
+  display: flex;
+  align-items: center;
+  gap: 1.2em;
+}
+
+.site-nav__mode,
+.site-nav__menu {
+  padding: 6px 2px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: #6f7a8c;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.site-nav__mode:hover,
+.site-nav__mode:focus-visible,
+.site-nav__menu:hover,
+.site-nav__menu:focus-visible {
+  color: #c9d2e0;
+  border-color: #ffb25c;
+  outline: none;
+}
+
+.site-nav__mode[hidden] { display: none; }
+
+.site-nav__mode[aria-pressed="true"],
+.site-nav__mode.is-armed,
+.site-nav__menu[aria-expanded="true"] {
+  color: #ffd089;
+  border-color: #ffd089;
+  text-shadow: 0 0 12px rgba(255, 208, 137, 0.6);
+}
+
+.site-nav__mode[disabled] {
+  cursor: default;
+  color: #4f5866;
+  border-color: transparent;
+}
+
+.site-nav__menu { display: none; }
+
+/* a dot on the menu button when any mode inside it is on */
+.site-nav__menu.has-active::after {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-left: 0.5em;
+  vertical-align: 0.15em;
+  border-radius: 50%;
+  background: #ffd089;
+  box-shadow: 0 0 8px rgba(255, 208, 137, 0.9);
+}
+
+@media (max-width: 640px) {
+  .site-nav__menu { display: inline-block; }
+
+  .site-nav__modes {
+    display: none;
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    min-width: 11em;
+    padding: 6px 0;
+    border: 1px solid rgba(255, 178, 92, 0.3);
+    border-radius: 10px;
+    background: rgba(8, 11, 18, 0.94);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+  }
+
+  .site-nav__modes.is-open { display: flex; }
+
+  .site-nav__modes .site-nav__mode {
+    text-align: left;
+    padding: 12px 18px;
+    border-bottom: 0;
+  }
+
+  .site-nav__modes .site-nav__mode[aria-pressed="true"],
+  .site-nav__modes .site-nav__mode.is-armed {
+    background: rgba(255, 178, 92, 0.08);
+  }
+}
+
+/* ---- hint toast ---- */
+
+.site-hint {
+  position: fixed;
+  z-index: 6;
+  top: 52px;
+  right: 16px;
+  left: 16px;
+  margin: 0 0 0 auto;
+  max-width: 34ch;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 178, 92, 0.35);
+  border-radius: 8px;
+  background: rgba(8, 11, 18, 0.92);
+  color: #c9d2e0;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+}
+
+.site-hint[hidden] { display: none; }

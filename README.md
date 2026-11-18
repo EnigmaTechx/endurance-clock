@@ -222,6 +222,13 @@ All the images are rendered from the real pages at a fixed time by
 `tools/capture.js` (needs Playwright with Chromium: `npx playwright install
 chromium`, then `node tools/capture.js`). Re-run it after visual changes.
 
+## Nav and the mobile menu
+
+Both pages share `css/nav.css` and `js/nav.js`. The mode buttons (Tilt and Tick
+on the 2D page; Miller, Alarm and Tick on the 3D page) sit inline on wide
+screens and collapse into a **Menu** dropdown below 640 px, with a dot on the
+button when any mode is on.
+
 ## Accessibility
 
 The clock has `role="img"` with an `aria-label` that updates every minute. Under
