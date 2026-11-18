@@ -116,6 +116,30 @@ body {
   border-color: transparent;
 }
 
+.site-hint {
+  position: fixed;
+  z-index: 3;
+  top: 52px;
+  right: 16px;
+  left: 16px;
+  margin: 0 0 0 auto;
+  max-width: 34ch;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 178, 92, 0.35);
+  border-radius: 8px;
+  background: rgba(8, 11, 18, 0.92);
+  color: #c9d2e0;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+}
+
+.site-hint[hidden] { display: none; }
+
+/* finger drags drive the parallax on phones; the page itself never scrolls */
+.stage { touch-action: none; }
+
 /* parallax layers (js/parallax.js): promote to their own layers */
 .starfield { will-change: transform; }
 .has-parallax .endurance-clock__svg { will-change: transform; transform-style: preserve-3d; }

@@ -122,10 +122,11 @@ part of the component.
 On the 2D page the scene responds to the phone's gyroscope, relative to how you
 are holding it, or to the mouse on desktop. The starfield shifts furthest and
 opposite to the input, the Gargantua glow less so, the ring tilts in perspective,
-and the hands and second craft shift slightly towards the input. iOS requires a
-tap to grant motion access, so a **Tilt** button appears in the nav there and
-only there; if access is refused, or motion sensors are off in the browser's
-settings, it reads **Tilt off**. Off under `prefers-reduced-motion`.
+and the hands and second craft shift slightly towards the input. Dragging a finger across the page steers it too, so it works on phones whose
+browser withholds the gyroscope. If no readings arrive on a touch device a
+**Tilt** button appears in the nav: on iOS it asks for motion access (which needs
+a tap), and elsewhere it explains how to allow motion sensors for the site. Brave
+blocks them by default. Off under `prefers-reduced-motion`.
 
 ## Accessibility
 
