@@ -20,18 +20,35 @@ if (params.get('demo') === 'dock') {
 }
 
 const millerToggle = document.getElementById('miller-toggle');
+const murphToggle = document.getElementById('murph-toggle');
+let millerState = null;
 
-/** On Miller's planet the tick marks each Earth day of dilated time (every 1.4 s at the film's ratio). */
-function setTickSource(on, state) {
+/**
+ * What the tick marks: on Miller's planet each Earth day of dilated time
+ * (every 1.4 s at the film's ratio); with Murph's watch, the Morse pattern;
+ * otherwise every second.
+ */
+function updateTickSource() {
   if (!window.Tick) return;
-  if (!on) { window.Tick.setSource(null); return; }
-  const periodMs = 86400000 / FACTOR;
-  // past the ramp the dilated clock is linear: D = t0 + (tau + (K-1)(tau - R/2)) s.
-  // Real time of a local midnight D_m on that line, used as the anchor:
-  const d0 = new Date(state.t0 + state.timeOffset);
-  const midnight = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate()).getTime();
-  const tau = ((midnight - (state.t0 + state.timeOffset)) / 1000 + (FACTOR - 1) * RAMP_SECONDS / 2) / FACTOR;
-  window.Tick.setSource({ periodMs, anchorMs: state.t0 + tau * 1000, style: 'miller' });
+  if (clock.isMiller() && millerState) {
+    const periodMs = 86400000 / FACTOR;
+    // past the ramp the dilated clock is linear: D = t0 + (tau + (K-1)(tau - R/2)) s.
+    // Real time of a local midnight D_m on that line, used as the anchor:
+    const d0 = new Date(millerState.t0 + millerState.timeOffset);
+    const midnight = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate()).getTime();
+    const tau = ((midnight - (millerState.t0 + millerState.timeOffset)) / 1000 + (FACTOR - 1) * RAMP_SECONDS / 2) / FACTOR;
+    window.Tick.setSource({ periodMs, anchorMs: millerState.t0 + tau * 1000, style: 'miller' });
+  } else if (clock.isMurph() && window.Murph) {
+    window.Tick.setSource({ next: window.Murph.nextTick, style: 'clock' });
+  } else {
+    window.Tick.setSource(null);
+  }
+}
+
+function setUrlFlag(key, value) {
+  const url = new URL(location.href);
+  if (value) url.searchParams.set(key, value); else url.searchParams.delete(key);
+  history.replaceState(null, '', url);
 }
 
 let clock;
@@ -56,11 +73,15 @@ try {
       sound: document.getElementById('alarm-sound')
     },
     onMillerChange(on, state) {
+      millerState = state;
       millerToggle.setAttribute('aria-pressed', String(on));
-      const url = new URL(location.href);
-      if (on) url.searchParams.set('mode', 'miller'); else url.searchParams.delete('mode');
-      history.replaceState(null, '', url);
-      setTickSource(on, state);
+      setUrlFlag('mode', on ? 'miller' : null);
+      updateTickSource();
+    },
+    onMurphChange(on) {
+      murphToggle.setAttribute('aria-pressed', String(on));
+      setUrlFlag('murph', on ? '1' : null);
+      updateTickSource();
     }
   });
 } catch (err) {
@@ -69,7 +90,9 @@ try {
 }
 
 millerToggle.addEventListener('click', () => clock.setMiller(!clock.isMiller()));
+murphToggle.addEventListener('click', () => clock.setMurph(!clock.isMurph()));
 if (params.get('mode') === 'miller') clock.setMiller(true);
+if (params.get('murph') === '1') clock.setMurph(true);
 
 // handle for poking at the scene from devtools
 window.__endurance = clock;

@@ -45,6 +45,8 @@
       <span class="site-nav__modes" id="nav-modes">
         <button type="button" id="tilt-enable" class="site-nav__mode" hidden
                 title="Allow motion access so the clock responds to tilting the phone">Tilt</button>
+        <button type="button" id="murph-toggle" class="site-nav__mode" aria-pressed="false"
+                title="Murph's watch: the second hand ticks STAY in Morse">Murph</button>
         <button type="button" id="tick-toggle" class="site-nav__mode" aria-pressed="false"
                 title="A quiet tick on every second">Tick</button>
       </span>
@@ -62,6 +64,7 @@
   <script src="js/parallax.js"></script>
   <script src="js/daylight.js"></script>
   <script src="js/tick.js"></script>
+  <script src="js/murph.js"></script>
   <script src="js/nav.js"></script>
   <script>
     if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === '127.0.0.1' || location.hostname === 'localhost')) {

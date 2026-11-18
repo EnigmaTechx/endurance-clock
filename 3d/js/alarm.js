@@ -391,7 +391,7 @@ export function createAlarm(opts) {
       }
     }
 
-    ship.setTrailBoost(trailBoost);
+    ship.setTrailBoost(trailBoost, 'alarm');
     setLine(text, key);
     return pulses;
   }

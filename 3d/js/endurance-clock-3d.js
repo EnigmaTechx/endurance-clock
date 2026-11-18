@@ -51,6 +51,7 @@ const DEFAULTS = {
   alarmControls: null,    // panel elements for the alarm (see alarm.js); API works without
   fallback: null,         // element to reveal if WebGL is unavailable
   onMillerChange: null,   // (on: boolean, state: {t0}) => void
+  onMurphChange: null,    // (on: boolean) => void
   onReady: null
 };
 
@@ -80,6 +81,7 @@ function buildReadoutDom() {
       '<div class="clock3d__time"><span class="ec-hm"></span><span class="ec-seconds"></span><span class="ec-period"></span></div>' +
       '<div class="clock3d__meta"></div>' +
       '<div class="clock3d__meta clock3d__meta--miller" hidden></div>' +
+      '<div class="clock3d__meta clock3d__meta--murph" hidden></div>' +
       '<div class="clock3d__meta clock3d__meta--alarm" hidden></div>' +
     '</div>';
   return overlay;
@@ -403,6 +405,39 @@ export function mount(container, options) {
     readout.updateMeta(shown, 'Endurance date');
   }
 
+  // ---------- Murph's watch ----------
+
+  const murph = { on: false, letter: -2 };
+  const murphLine = overlay && overlay.querySelector('.clock3d__meta--murph');
+
+  function setMurph(on) {
+    on = !!on && !!window.Murph;
+    if (on === murph.on) return;
+    murph.on = on;
+    murph.letter = -2;
+    if (murphLine) murphLine.hidden = !on;
+    if (!on) {
+      ship.setCraftFlare(0);
+      ship.setTrailBoost(0, 'murph');
+    }
+    frameCamera();
+    if (opts.onMurphChange) opts.onMurphChange(on);
+  }
+
+  function renderMurphLine(letter) {
+    if (!murphLine || letter === murph.letter) return;
+    murph.letter = letter;
+    murphLine.textContent = '';
+    murphLine.appendChild(document.createTextNode('Murph\u2019s watch \u00b7 '));
+    const word = window.Murph.WORD;
+    for (let i = 0; i < word.length; i++) {
+      const span = document.createElement('span');
+      span.className = 'ec-letter' + (i === letter ? ' is-sending' : '');
+      span.textContent = word[i];
+      murphLine.appendChild(span);
+    }
+  }
+
   function timeAngles(now) {
     const ms = now.getMilliseconds();
     const s = now.getSeconds();
@@ -432,6 +467,14 @@ export function mount(container, options) {
     const now = displayDate();
 
     const angles = timeAngles(now);
+    if (murph.on && !miller.on) {
+      // quartz tick instead of a sweep, and a Morse flare on the craft
+      const st = window.Murph.stateAt(real.getTime());
+      angles.secondDeg = now.getSeconds() * 6;
+      ship.setCraftFlare(st.flash);
+      ship.setTrailBoost(0.6 * st.flash, 'murph');
+      renderMurphLine(st.letter);
+    }
     ship.setAngles(angles.hourDeg, angles.minuteDeg, angles.secondDeg);
     ship.setActive(angles.activeModule);
     ship.setPulses(alarm.update(real, t));
@@ -543,6 +586,8 @@ export function mount(container, options) {
     daylight: () => daylightPalette,
     setMiller,
     isMiller: () => miller.on,
+    setMurph,
+    isMurph: () => murph.on,
     pause() { paused = true; stop(); },
     resume() { paused = false; start(); },
     isRunning: () => running,
