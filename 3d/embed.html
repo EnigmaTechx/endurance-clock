@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Endurance Clock · embed example</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="css/endurance-clock-3d.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+  <style>
+    /* An ordinary page: the widget is just a sized element in the flow. */
+    :root { color-scheme: dark; }
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #05070d 0%, #0b1020 60%, #141a2e 100%);
+      color: #d7deea;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+    }
+    .hero {
+      position: relative;
+      min-height: 100svh;
+      display: grid;
+      align-items: end;
+    }
+    .hero__clock {
+      position: absolute;
+      inset: 0;
+    }
+    .hero__copy {
+      position: relative;
+      z-index: 1;
+      padding: 0 clamp(20px, 6vw, 80px) clamp(32px, 8vh, 96px);
+      max-width: 36rem;
+      text-shadow: 0 2px 16px rgba(0, 0, 0, 0.8);
+    }
+    .hero__copy h1 { font-size: clamp(2rem, 6vw, 4rem); margin: 0 0 0.3em; letter-spacing: -0.02em; }
+    .hero__copy p { margin: 0; opacity: 0.8; }
+    section { padding: clamp(40px, 8vw, 96px) clamp(20px, 6vw, 80px); max-width: 60rem; margin: 0 auto; }
+    .card {
+      width: min(100%, 420px);
+      aspect-ratio: 1;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+    code { background: rgba(255,255,255,0.08); padding: 0.1em 0.4em; border-radius: 4px; }
+    pre { background: rgba(0,0,0,0.4); padding: 16px; border-radius: 10px; overflow: auto; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <!-- 1. Hero: transparent, no readout, fills the section behind the copy -->
+  <div class="hero">
+    <div class="hero__clock" data-endurance-clock-3d data-transparent data-readout="false" data-fit="0.9"></div>
+    <div class="hero__copy">
+      <h1>Endurance Clock</h1>
+      <p>The ring of the Endurance as a clock, embedded transparently over a page. Scroll down for a second, self-contained instance.</p>
+    </div>
+  </div>
+
+  <section>
+    <h2>How this page embeds it</h2>
+    <pre>&lt;link rel="stylesheet" href="/3d/css/endurance-clock-3d.css"&gt;
+&lt;script type="importmap"&gt;{ "imports": { "three": "…/three.module.js", "three/addons/": "…/examples/jsm/" } }&lt;/script&gt;
+
+&lt;div class="hero__clock" data-endurance-clock-3d data-transparent data-readout="false"&gt;&lt;/div&gt;
+&lt;script type="module" src="/3d/js/endurance-clock-3d.js"&gt;&lt;/script&gt;</pre>
+    <p>Or mount by hand: <code>import { mount } from '/3d/js/endurance-clock-3d.js'; const clock = mount(el, { transparent: true });</code>
+    The widget fills whatever size its container has, pauses when scrolled out of view, and <code>clock.destroy()</code> removes it.</p>
+  </section>
+
+  <!-- 2. A card: opaque, with the readout, inside normal flow -->
+  <section>
+    <h2>As a card</h2>
+    <div id="card" class="card"></div>
+  </section>
+
+  <script type="module">
+    import { mount } from './js/endurance-clock-3d.js';
+    // the hero mounted itself from the data attribute; this one is mounted by hand
+    window.cardClock = mount(document.getElementById('card'), { quality: 'low', pitch: 8 });
+  </script>
+  <script type="module" src="js/endurance-clock-3d.js"></script>
+</body>
+</html>

@@ -93,6 +93,50 @@ window. Move the mouse or drag to tilt the view; it drifts gently when idle.
 - `3d/js/stars.js` is a twinkling point-sprite starfield.
 - `3d/js/main.js` sets up the scene, lights, bloom and the render loop.
 
+### Embedding the 3D clock
+
+The 3D clock is a widget. `3d/js/endurance-clock-3d.js` exports `mount(container,
+options)`; the widget fills whatever size the container has, creates its own canvas
+and readout, pauses when scrolled out of view or when the tab is hidden, and
+several can share a page. `3d/embed.html` is a working example: a transparent hero
+behind page copy, plus an opaque card further down.
+
+```html
+<link rel="stylesheet" href="/3d/css/endurance-clock-3d.css">
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+               "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }
+</script>
+
+<div id="hero" style="height: 80vh" data-endurance-clock-3d data-transparent data-readout="false"></div>
+<script type="module" src="/3d/js/endurance-clock-3d.js"></script>
+```
+
+Elements with `data-endurance-clock-3d` mount themselves; options come from
+`data-*` attributes. Or mount by hand:
+
+```js
+import { mount } from '/3d/js/endurance-clock-3d.js';
+const clock = mount(document.querySelector('#hero'), { transparent: true, readout: false });
+clock.setMiller(true);           // Miller's planet mode
+clock.alarm.startCountdown(5, new Date());
+clock.pause(); clock.resume();
+clock.destroy();
+```
+
+Options: `transparent` (alpha canvas so the page shows through; bloom is off in
+this mode), `readout`, `gargantua`, `stars`, `quality` (`auto` | `low` | `high`),
+`interactive`, `sway`, `pitch` (camera look-down angle, degrees), `fit` (framing
+margin; smaller is tighter), `pauseWhenHidden`, `hour12`, `locale`, `daylight`
+(use `js/daylight.js` if the page loaded it), `overlays` (`{ top, bottom }`
+elements to keep the ring clear of), `alarmControls` (panel elements; the alarm
+API works without them), `fallback` (element to reveal without WebGL),
+`onMillerChange`, `onReady`. Colours and type are custom properties on the
+container (`--accent`, `--text`, `--text-dim`, `--font`).
+
+The full page at `/3d/` is a thin consumer of the same widget: `3d/js/main.js`
+mounts it full-screen and wires the nav, alarm panel and tick to it.
+
 Query parameters: `?mode=miller` starts in Miller's planet mode. `?quality=low` turns bloom off and `?quality=high` forces it on
 (it turns off automatically on small low-core devices), `?hour12=true|false` and `?locale=en-GB` override the
 readout. `?demo=dock` shifts the clock so the hour turns a few seconds after
