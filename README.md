@@ -80,6 +80,16 @@ window. Move the mouse or drag to tilt the view; it drifts gently when idle.
   reading, and the Ranger is gone, since it took you down to the surface. The
   dilated clock is an analytic function of real elapsed time with a short ramp,
   so it never drifts when a tab sleeps. Switching off snaps back to real time.
+- `3d/js/alarm.js` is the alarm and countdown, from the **Alarm** button in the nav.
+  A one-shot alarm at a clock time, or a countdown in minutes (presets or custom);
+  both survive a reload. While armed, the alarm's hour module breathes and a beacon
+  marks the alarm position on the ring; a countdown puts a marker on the second
+  craft's orbit where the craft will be when time is up, counts down in the readout
+  and the tab title, and in the final minute a shrinking arc joins the craft to the
+  marker while its trail lengthens. When either fires, a wave of light chases round
+  the ring, a soft chime repeats (with a vibration on phones; the sound can be
+  turned off in the panel) and a tap anywhere, or Escape, dismisses it. A missed
+  alarm more than ten minutes old is dropped rather than rung.
 - `3d/js/stars.js` is a twinkling point-sprite starfield.
 - `3d/js/main.js` sets up the scene, lights, bloom and the render loop.
 

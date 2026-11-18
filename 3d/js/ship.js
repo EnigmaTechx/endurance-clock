@@ -374,10 +374,22 @@ export function buildShip() {
   const hot = new THREE.Color(0xfff1dc);
   const windowCool = new THREE.Color(COLORS.window);
   const hullBase = new THREE.Color(COLORS.hull);
-  const state = { active: -1, blend: new Array(12).fill(0) };
+  const state = { active: -1, blend: new Array(12).fill(0), pulse: new Array(12).fill(0) };
+  let trailDeg = TRAIL_DEG;
 
   function setActive(index) {
     state.active = index;
+  }
+
+  /** Extra glow per module (0..1), e.g. a breathing alarm module or a ringing wave. */
+  function setPulses(values) {
+    for (let i = 0; i < 12; i++) state.pulse[i] = values ? values[i] : 0;
+  }
+
+  /** 0..1: lengthens and brightens the second craft's trail (countdown's final minute). */
+  function setTrailBoost(k) {
+    trailDeg = TRAIL_DEG + 70 * k;
+    trail.material.opacity = 0.9 + 0.1 * k;
   }
 
   /** Animate module highlight blends; dt in seconds. */
@@ -385,8 +397,9 @@ export function buildShip() {
     const k = instant ? 1 : Math.min(1, dt * 1.6);
     for (let i = 0; i < 12; i++) {
       const target = i === state.active ? 1 : 0;
-      const b = state.blend[i] += (target - state.blend[i]) * k;
-      if (Math.abs(b - target) < 0.002) state.blend[i] = target;
+      state.blend[i] += (target - state.blend[i]) * k;
+      if (Math.abs(state.blend[i] - target) < 0.002) state.blend[i] = target;
+      const b = Math.max(state.blend[i], state.pulse[i]);
       const m = modules[i];
       m.bodyMat.emissive.copy(accent).multiplyScalar(0.55 * b);
       m.bodyMat.color.lerpColors(hullBase, accent, b * 0.8);
@@ -413,7 +426,7 @@ export function buildShip() {
     const pos = trail.geometry.attributes.position.array;
     for (let i = 0; i < TRAIL_SEGMENTS; i++) {
       const t = i / (TRAIL_SEGMENTS - 1);
-      const deg = secondDeg - TRAIL_DEG * (1 - t) - 0.6;
+      const deg = secondDeg - trailDeg * (1 - t) - 0.6;
       const ta = THREE.MathUtils.degToRad(90 - deg);
       pos[i * 3] = Math.cos(ta) * ORBIT_R;
       pos[i * 3 + 1] = Math.sin(ta) * ORBIT_R;
@@ -424,5 +437,5 @@ export function buildShip() {
 
   const docks = modules.map((m) => m.dock);
 
-  return { group, modules, docks, hour, minute, craft, trail, glowTex, setActive, updateModules, setAngles };
+  return { group, modules, docks, hour, minute, craft, trail, glowTex, setActive, setPulses, setTrailBoost, updateModules, setAngles };
 }

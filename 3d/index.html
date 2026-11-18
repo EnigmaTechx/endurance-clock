@@ -26,8 +26,35 @@
       <span aria-current="page">3D</span>
       <button type="button" id="miller-toggle" class="site-nav__mode" aria-pressed="false"
               title="Miller's planet: one hour here is seven years on the Endurance">Miller</button>
+      <button type="button" id="alarm-toggle" class="site-nav__mode" aria-expanded="false" aria-controls="alarm-panel"
+              title="Set an alarm or a countdown">Alarm</button>
     </span>
   </nav>
+
+  <div id="alarm-panel" class="panel" hidden>
+    <div class="panel__row">
+      <label class="panel__label" for="alarm-time">Alarm</label>
+      <input type="time" id="alarm-time" class="panel__input">
+      <button type="button" id="alarm-set" class="panel__btn panel__btn--primary">Set</button>
+      <button type="button" id="alarm-clear" class="panel__btn" hidden>Clear</button>
+    </div>
+    <div class="panel__row">
+      <span class="panel__label">Countdown</span>
+      <button type="button" class="panel__btn" data-min="1">1m</button>
+      <button type="button" class="panel__btn" data-min="5">5m</button>
+      <button type="button" class="panel__btn" data-min="10">10m</button>
+      <button type="button" class="panel__btn" data-min="25">25m</button>
+    </div>
+    <div class="panel__row">
+      <span class="panel__label"></span>
+      <input type="number" id="countdown-minutes" class="panel__input panel__input--num" min="1" max="720" placeholder="min" inputmode="numeric">
+      <button type="button" id="countdown-start" class="panel__btn panel__btn--primary">Start</button>
+      <button type="button" id="countdown-cancel" class="panel__btn" hidden>Cancel</button>
+    </div>
+    <div class="panel__row">
+      <label class="panel__check"><input type="checkbox" id="alarm-sound" checked> Sound</label>
+    </div>
+  </div>
 
   <div id="clock" class="clock3d" role="img" aria-label="Endurance clock">
     <div class="clock3d__readout">
@@ -36,6 +63,7 @@
       </div>
       <div class="clock3d__meta"></div>
       <div class="clock3d__meta clock3d__meta--miller" hidden></div>
+      <div class="clock3d__meta clock3d__meta--alarm" hidden></div>
     </div>
   </div>
 

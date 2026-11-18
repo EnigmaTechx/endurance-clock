@@ -17,6 +17,7 @@ import { buildStars } from './stars.js';
 import { createReadout } from './readout.js';
 import { buildRanger, dockTimeline, DOCK_LEAD } from './ranger.js';
 import { FACTOR, rateAt, dilatedElapsed, splitElapsed } from './miller.js';
+import { createAlarm } from './alarm.js';
 
 const params = new URLSearchParams(location.search);
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -247,6 +248,27 @@ const readout = createReadout(clockRoot, {
   locale: params.get('locale') || undefined
 });
 
+// ---------- alarm and countdown ----------
+
+const alarm = createAlarm({
+  ship,
+  reduceMotion,
+  onLayoutChange: () => frameCamera(),
+  line: clockRoot.querySelector('.clock3d__meta--alarm'),
+  els: {
+    toggle: document.getElementById('alarm-toggle'),
+    panel: document.getElementById('alarm-panel'),
+    time: document.getElementById('alarm-time'),
+    set: document.getElementById('alarm-set'),
+    clear: document.getElementById('alarm-clear'),
+    presets: Array.from(document.querySelectorAll('#alarm-panel [data-min]')),
+    minutes: document.getElementById('countdown-minutes'),
+    start: document.getElementById('countdown-start'),
+    cancel: document.getElementById('countdown-cancel'),
+    sound: document.getElementById('alarm-sound')
+  }
+});
+
 // ---------- Miller's planet ----------
 
 const miller = { on: false, t0: 0 };
@@ -349,6 +371,7 @@ function frame() {
   const angles = timeAngles(now);
   ship.setAngles(angles.hourDeg, angles.minuteDeg, angles.secondDeg);
   ship.setActive(angles.activeModule);
+  ship.setPulses(alarm.update(real, t));
   ship.updateModules(dt, first || reduceMotion);
 
   if (miller.on) {
@@ -418,7 +441,7 @@ if (reduceMotion) {
 }
 
 // handle for poking at the scene from devtools
-window.__endurance = { scene, camera, renderer, composer, bloomPass, rig, sky, ship, ranger, stars, gargantua, key, rim, hemi, front, daylight: () => daylightPalette };
+window.__endurance = { scene, camera, renderer, composer, bloomPass, rig, sky, ship, ranger, stars, gargantua, key, rim, hemi, front, alarm, daylight: () => daylightPalette };
 if (daylight) daylight.tryKnownLocation();
 
 // WebGL context can still be lost after a successful start

@@ -105,11 +105,99 @@ body {
   outline: none;
 }
 
-.site-nav__mode[aria-pressed="true"] {
+.site-nav__mode[aria-pressed="true"],
+.site-nav__mode.is-armed {
   color: #ffd089;
   border-color: #ffd089;
   text-shadow: 0 0 12px rgba(255, 208, 137, 0.6);
 }
+
+/* ---- alarm panel ---- */
+
+.panel {
+  position: fixed;
+  z-index: 4;
+  top: calc(50px + env(safe-area-inset-top));
+  right: 16px;
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  max-width: calc(100vw - 32px);
+  border: 1px solid rgba(255, 178, 92, 0.3);
+  border-radius: 10px;
+  background: rgba(8, 11, 18, 0.94);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.panel[hidden] { display: none; }
+
+.panel__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.panel__label {
+  min-width: 7.5em;
+  color: var(--text);
+}
+
+.panel__input {
+  padding: 6px 8px;
+  border: 1px solid rgba(201, 210, 224, 0.25);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font: inherit;
+  letter-spacing: 0.06em;
+  color-scheme: dark;
+}
+
+.panel__input--num { width: 5.5em; }
+
+.panel__input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.panel__btn {
+  padding: 6px 10px;
+  border: 1px solid rgba(201, 210, 224, 0.25);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.panel__btn:hover,
+.panel__btn:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.panel__btn--primary {
+  border-color: rgba(255, 178, 92, 0.6);
+  color: var(--accent);
+}
+
+.panel__btn[hidden] { display: none; }
+
+.panel__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.panel__check input { accent-color: var(--accent); }
 
 /* ---- readout overlay ---- */
 
@@ -185,6 +273,28 @@ body {
 .clock3d__meta--miller { color: #a88c6a; }
 
 .clock3d__meta--miller[hidden] { display: none; }
+
+.clock3d__meta--alarm {
+  color: var(--accent);
+  letter-spacing: 0.2em;
+}
+
+.clock3d__meta--alarm[hidden] { display: none; }
+
+.clock3d__meta--alarm.is-ringing {
+  color: #fff1dc;
+  text-shadow: 0 0 16px rgba(255, 178, 92, 0.8);
+  animation: ec-ring-blink 1s steps(2, jump-none) infinite;
+}
+
+@keyframes ec-ring-blink {
+  from { opacity: 1; }
+  to { opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .clock3d__meta--alarm.is-ringing { animation: none; }
+}
 
 /* ---- WebGL fallback ---- */
 
