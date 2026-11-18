@@ -27,6 +27,7 @@
   <meta name="twitter:title" content="Endurance Clock">
   <meta name="twitter:description" content="A web clock themed on the Endurance from Interstellar. Twelve ring modules mark the hours; the hands sweep in real local time.">
   <meta name="twitter:image" content="https://clock.enigmatech.dev/assets/og.png">
+  <link rel="stylesheet" href="css/nav.css">
   <link rel="stylesheet" href="css/page.css">
   <link rel="stylesheet" href="css/endurance-clock.css">
 </head>
@@ -40,10 +41,13 @@
     <span class="site-nav__links">
       <span aria-current="page">2D</span>
       <a href="3d/">3D</a>
-      <button type="button" id="tilt-enable" class="site-nav__mode" hidden
-              title="Allow motion access so the clock responds to tilting the phone">Tilt</button>
-      <button type="button" id="tick-toggle" class="site-nav__mode" aria-pressed="false"
-              title="A quiet tick on every second">Tick</button>
+      <button type="button" class="site-nav__menu" aria-expanded="false" aria-controls="nav-modes">Menu</button>
+      <span class="site-nav__modes" id="nav-modes">
+        <button type="button" id="tilt-enable" class="site-nav__mode" hidden
+                title="Allow motion access so the clock responds to tilting the phone">Tilt</button>
+        <button type="button" id="tick-toggle" class="site-nav__mode" aria-pressed="false"
+                title="A quiet tick on every second">Tick</button>
+      </span>
     </span>
   </nav>
 
@@ -58,6 +62,7 @@
   <script src="js/parallax.js"></script>
   <script src="js/daylight.js"></script>
   <script src="js/tick.js"></script>
+  <script src="js/nav.js"></script>
   <script>
     if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === '127.0.0.1' || location.hostname === 'localhost')) {
       navigator.serviceWorker.register('sw.js').catch(function () {});
