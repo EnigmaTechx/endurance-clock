@@ -27,6 +27,7 @@
   <meta name="twitter:title" content="Endurance Clock · 3D">
   <meta name="twitter:description" content="The Endurance from Interstellar as a 3D clock. The ring holds still while the sky and Gargantua wheel past; a Ranger docks on the hour.">
   <meta name="twitter:image" content="https://clock.enigmatech.dev/assets/og.png">
+  <link rel="stylesheet" href="css/endurance-clock-3d.css">
   <link rel="stylesheet" href="css/clock3d.css">
   <script type="importmap">
   {
@@ -38,8 +39,6 @@
   </script>
 </head>
 <body>
-  <canvas id="scene" class="scene" aria-hidden="true"></canvas>
-
   <nav class="site-nav" aria-label="Clock versions">
     <span class="site-nav__brand">Endurance</span>
     <span class="site-nav__links">
@@ -79,16 +78,7 @@
     </div>
   </div>
 
-  <div id="clock" class="clock3d" role="img" aria-label="Endurance clock">
-    <div class="clock3d__readout">
-      <div class="clock3d__time">
-        <span class="ec-hm"></span><span class="ec-seconds"></span><span class="ec-period"></span>
-      </div>
-      <div class="clock3d__meta"></div>
-      <div class="clock3d__meta clock3d__meta--miller" hidden></div>
-      <div class="clock3d__meta clock3d__meta--alarm" hidden></div>
-    </div>
-  </div>
+  <div id="clock" class="ec3d--page"></div>
 
   <div id="fallback" class="fallback" hidden>
     <p>This version needs WebGL, which your browser has turned off or doesn't support.</p>

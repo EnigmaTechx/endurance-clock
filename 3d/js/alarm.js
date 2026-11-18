@@ -12,7 +12,7 @@
 import * as THREE from 'three';
 import { RING_R, ORBIT_R } from './ship.js';
 
-const STORE = { alarm: 'endurance.alarm', countdown: 'endurance.countdownEnd', sound: 'endurance.sound' };
+const STORE = { alarm: 'endurance.alarm', alarmAt: 'endurance.alarmAt', countdown: 'endurance.countdownEnd', sound: 'endurance.sound' };
 const RING_FOR_MS = 90000;        // auto-stop ringing after this
 const STALE_MS = 10 * 60000;      // a missed alarm older than this is dropped, not rung
 const COLOR = 0xffb25c;
@@ -168,6 +168,7 @@ export function createAlarm(opts) {
 
   function scheduleAlarm(now) {
     state.alarmAt = state.alarmHM ? nextOccurrence(state.alarmHM, now) : null;
+    store(STORE.alarmAt, state.alarmAt ? state.alarmAt.getTime() : null);
   }
 
   function setAlarm(hm, now) {
@@ -182,6 +183,7 @@ export function createAlarm(opts) {
     state.alarmHM = null;
     state.alarmAt = null;
     store(STORE.alarm, null);
+    store(STORE.alarmAt, null);
     renderPanel();
   }
 
@@ -219,6 +221,7 @@ export function createAlarm(opts) {
   // ---------- panel ----------
 
   function openPanel(open) {
+    if (!els) return;
     els.panel.hidden = !open;
     els.toggle.setAttribute('aria-expanded', String(open));
     if (open) {
@@ -231,6 +234,7 @@ export function createAlarm(opts) {
   }
 
   function renderPanel() {
+    if (!els) return;
     els.clear.hidden = !state.alarmHM;
     els.cancel.hidden = !state.countdownEnd;
     els.sound.checked = state.sound;
@@ -238,33 +242,51 @@ export function createAlarm(opts) {
     if (state.alarmHM) els.time.value = state.alarmHM;
   }
 
-  els.toggle.addEventListener('click', () => openPanel(els.panel.hidden));
-  els.set.addEventListener('click', () => {
-    if (/^\d\d:\d\d$/.test(els.time.value)) { setAlarm(els.time.value, new Date()); openPanel(false); }
-  });
-  els.time.addEventListener('keydown', (e) => { if (e.key === 'Enter') els.set.click(); });
-  els.clear.addEventListener('click', () => clearAlarm());
-  for (const b of els.presets) {
-    b.addEventListener('click', () => { startCountdown(Number(b.dataset.min), new Date()); openPanel(false); });
+  if (els) {
+    els.toggle.addEventListener('click', () => openPanel(els.panel.hidden));
+    els.set.addEventListener('click', () => {
+      if (/^\d\d:\d\d$/.test(els.time.value)) { setAlarm(els.time.value, new Date()); openPanel(false); }
+    });
+    els.time.addEventListener('keydown', (e) => { if (e.key === 'Enter') els.set.click(); });
+    els.clear.addEventListener('click', () => clearAlarm());
+    for (const b of els.presets) {
+      b.addEventListener('click', () => { startCountdown(Number(b.dataset.min), new Date()); openPanel(false); });
+    }
+    els.start.addEventListener('click', () => {
+      const v = Number(els.minutes.value);
+      if (v >= 1 && v <= 720) { startCountdown(v, new Date()); els.minutes.value = ''; openPanel(false); }
+    });
+    els.minutes.addEventListener('keydown', (e) => { if (e.key === 'Enter') els.start.click(); });
+    els.cancel.addEventListener('click', () => cancelCountdown());
+    els.sound.addEventListener('change', () => { state.sound = els.sound.checked; store(STORE.sound, state.sound ? '1' : '0'); if (state.sound) chime.unlock(); });
   }
-  els.start.addEventListener('click', () => {
-    const v = Number(els.minutes.value);
-    if (v >= 1 && v <= 720) { startCountdown(v, new Date()); els.minutes.value = ''; openPanel(false); }
-  });
-  els.minutes.addEventListener('keydown', (e) => { if (e.key === 'Enter') els.start.click(); });
-  els.cancel.addEventListener('click', () => cancelCountdown());
-  els.sound.addEventListener('change', () => { state.sound = els.sound.checked; store(STORE.sound, state.sound ? '1' : '0'); if (state.sound) chime.unlock(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { openPanel(false); dismiss(); } });
+  const onKey = (e) => { if (e.key === 'Escape') { openPanel(false); dismiss(); } };
   // a tap anywhere dismisses a ringing alarm; a tap outside closes the panel
-  window.addEventListener('pointerdown', (e) => {
+  const onPointer = (e) => {
     if (state.ringing) { dismiss(); return; }
-    if (!els.panel.hidden && !els.panel.contains(e.target) && e.target !== els.toggle) openPanel(false);
-  });
+    if (els && !els.panel.hidden && !els.panel.contains(e.target) && e.target !== els.toggle) openPanel(false);
+  };
+  document.addEventListener('keydown', onKey);
+  window.addEventListener('pointerdown', onPointer);
+  function destroy() {
+    document.removeEventListener('keydown', onKey);
+    window.removeEventListener('pointerdown', onPointer);
+    document.title = baseTitle;
+  }
 
-  // initial schedule; drop anything that is too stale to ring
+  // initial schedule. A stored target that is still ahead, or only just
+  // passed (a reload right after the alarm time), is kept so it rings;
+  // anything older is dropped rather than rung a day late.
   {
     const now = new Date();
-    scheduleAlarm(now);
+    const storedAt = Number(load(STORE.alarmAt)) || 0;
+    if (state.alarmHM && storedAt && now.getTime() - storedAt < STALE_MS) {
+      state.alarmAt = new Date(storedAt);
+    } else if (state.alarmHM && storedAt) {
+      clearAlarm();
+    } else {
+      scheduleAlarm(now);
+    }
     if (state.countdownEnd && now.getTime() - state.countdownEnd > STALE_MS) cancelCountdown();
     renderPanel();
   }
@@ -374,5 +396,5 @@ export function createAlarm(opts) {
     return pulses;
   }
 
-  return { update, setAlarm, clearAlarm, startCountdown, cancelCountdown, dismiss, state };
+  return { update, setAlarm, clearAlarm, startCountdown, cancelCountdown, dismiss, destroy, state };
 }
