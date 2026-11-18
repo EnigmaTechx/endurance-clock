@@ -208,23 +208,30 @@ function buildModule(index, glowTex) {
       g.add(m);
       windows.push(m);
     }
-    // inner docking hatch, where a Ranger or Lander would berth
-    const hatchMat = hullMaterial(COLORS.hullDark);
-    const hatch = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.46, 0.35, 24), hatchMat);
-    hatch.position.y = -h / 2 - 0.12;
-    g.add(hatch);
-    const collar = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.05, 8, 24), hullMaterial(0xc7cfdb));
-    collar.rotation.x = Math.PI / 2;
-    collar.position.y = -h / 2 - 0.3;
-    g.add(collar);
   }
+
+  // inner docking hatch, where the Ranger berths; cardinal modules carry the
+  // spoke at their centre, so theirs sits to one side of it
+  const dockX = cardinal ? 1.15 : 0;
+  const hatchMat = hullMaterial(COLORS.hullDark);
+  const hatch = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.46, 0.35, 24), hatchMat);
+  hatch.position.set(dockX, -h / 2 - 0.12, 0);
+  g.add(hatch);
+  const collar = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.05, 8, 24), hullMaterial(0xc7cfdb));
+  collar.rotation.x = Math.PI / 2;
+  collar.position.set(dockX, -h / 2 - 0.3, 0);
+  g.add(collar);
 
   // glow sprite behind the module, visible only when active
   const glow = glowSprite(glowTex, COLORS.accent, 7.5, 0);
   glow.position.z = 0.4;
   g.add(glow);
 
-  return { holder: holder, body: body, bodyMat: bodyMat, windowMat: windowMat, glow: glow, cardinal: cardinal };
+  return {
+    holder: holder, body: body, bodyMat: bodyMat, windowMat: windowMat, glow: glow, cardinal: cardinal,
+    // where a Ranger's docking collar meets the hatch, in ring polar terms
+    dock: { radius: RING_R - h / 2 - 0.3 - 0.31, tangent: dockX }
+  };
 }
 
 // ---------- hands ----------
@@ -415,5 +422,7 @@ export function buildShip() {
     trail.geometry.attributes.position.needsUpdate = true;
   }
 
-  return { group, modules, hour, minute, craft, setActive, updateModules, setAngles };
+  const docks = modules.map((m) => m.dock);
+
+  return { group, modules, docks, hour, minute, craft, glowTex, setActive, updateModules, setAngles };
 }

@@ -66,12 +66,18 @@ window. Move the mouse or drag to tilt the view; it drifts gently when idle.
 - `3d/js/gargantua.js` is a stylised black hole: a shadow sphere, a shader-driven
   accretion disc with Keplerian shear and relativistic beaming, and a lensed halo.
   It is geometry and shaders, not ray-traced lensing, so it runs on phones.
+- `3d/js/ranger.js` is the Ranger. It stays docked on the current hour's module;
+  24 seconds before the hour it undocks, climbs above the ring plane, flies a
+  clockwise arc to the next module and settles onto its hatch as the hour turns.
+  The flight is a pure function of the clock, so a sleeping tab or a mid-flight
+  page load lands in the right place.
 - `3d/js/stars.js` is a twinkling point-sprite starfield.
 - `3d/js/main.js` sets up the scene, lights, bloom and the render loop.
 
 Query parameters: `?quality=low` turns bloom off and `?quality=high` forces it on
 (it turns off automatically on small low-core devices), `?hour12=true|false` and `?locale=en-GB` override the
-readout. Without WebGL the page shows a link back to the 2D clock.
+readout. `?demo=dock` shifts the clock so the hour turns a few seconds after
+load, to watch the Ranger dock without waiting. Without WebGL the page shows a link back to the 2D clock.
 
 Three.js is pinned to `0.170.0` in the import map in `3d/index.html`.
 
