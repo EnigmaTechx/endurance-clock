@@ -208,6 +208,17 @@ The 2D component reads the palette through custom properties (`--ec-disc-rgb`,
 `--ec-disc-alpha`, `--ec-hull`, `--ec-hand`) and has fixed defaults without the
 script.
 
+### Murph's watch
+
+In the tesseract, Cooper ticks the second hand of Murph's watch in Morse. The
+**Murph** button on either page (or `?murph=1`) makes the second indicator tick
+like a quartz hand instead of sweeping, and flare in Morse, spelling STAY on a
+42-second loop: a dot is a one-second flare, a dash three, with the standard gaps.
+A line under the readout shows the word with the letter being sent lit. The
+timeline is anchored to the epoch, so every open page sends the same letter at the
+same moment. With the tick sound on, the ticks follow the Morse instead of the
+seconds. `js/murph.js` holds the timeline for both pages.
+
 ### Tick sound
 
 `js/tick.js` adds a quiet tick on every second, from the **Tick** button in either

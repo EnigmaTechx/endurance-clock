@@ -102,6 +102,25 @@
   opacity: 0.5;
 }
 
+/* Murph's watch: the word being sent, letter by letter */
+
+.clock3d__meta--murph { color: #a88c6a; letter-spacing: 0.3em; }
+
+.clock3d__meta--murph[hidden] { display: none; }
+
+.clock3d__meta--murph .ec-letter {
+  display: inline-block;
+  min-width: 1.4em;
+  text-align: center;
+  color: #5c5247;
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+.clock3d__meta--murph .ec-letter.is-sending {
+  color: #ffd089;
+  text-shadow: 0 0 14px rgba(255, 208, 137, 0.8);
+}
+
 /* Miller's planet readout: elapsed Endurance time, racing */
 
 .clock3d--miller .clock3d__time {

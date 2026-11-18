@@ -108,6 +108,18 @@
     var nowMs = Date.now();
     var audioNow = ctx.currentTime;
     var horizon = nowMs + lookahead * 1000;
+    if (source.next) {
+      // irregular pattern: the source says when the next tick falls
+      var n = source.next(Math.max(nowMs, lastScheduled));
+      while (n && n.at <= horizon) {
+        if (n.at > lastScheduled) {
+          scheduleTick(audioNow + (n.at - nowMs) / 1000, !!n.alt);
+          lastScheduled = n.at;
+        }
+        n = source.next(n.at);
+      }
+      return;
+    }
     // next tick strictly after the last scheduled one, and not in the past
     var k = Math.floor((Math.max(nowMs, lastScheduled + 1) - source.anchorMs) / source.periodMs) + 1;
     var t = source.anchorMs + k * source.periodMs;
@@ -170,7 +182,8 @@
 
   /**
    * Change what a tick marks.
-   * @param {{periodMs:number, anchorMs:number, style:'clock'|'miller'}|null} s  null restores the second tick
+   * @param s  {periodMs, anchorMs, style} for a regular tick, or {next(afterMs) -> {at, alt}|null, style}
+   *           for an irregular pattern; null restores the second tick
    */
   function setSource(s) {
     source = s || { periodMs: 1000, anchorMs: 0, style: 'clock' };

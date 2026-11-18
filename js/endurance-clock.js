@@ -241,10 +241,10 @@
     make('circle', { 'class': 'ec-orbit', cx: CX, cy: CY, r: ORBIT_R }, g);
     var trail = make('path', { 'class': 'ec-second-trail', d: '' }, g);
     var dot = make('g', { 'class': 'ec-second' }, g);
-    make('circle', { 'class': 'ec-second-dot', cx: CX, cy: CY - ORBIT_R, r: 9, opacity: 0.45, filter: 'url(#ec-soft)' }, dot);
-    make('circle', { 'class': 'ec-second-dot', cx: CX, cy: CY - ORBIT_R, r: 4 }, dot);
+    var halo = make('circle', { 'class': 'ec-second-dot', cx: CX, cy: CY - ORBIT_R, r: 9, opacity: 0.45, filter: 'url(#ec-soft)' }, dot);
+    var body = make('circle', { 'class': 'ec-second-dot', cx: CX, cy: CY - ORBIT_R, r: 4 }, dot);
     make('circle', { 'class': 'ec-second-dot-core', cx: CX, cy: CY - ORBIT_R, r: 1.6 }, dot);
-    return { trail: trail, dot: dot };
+    return { trail: trail, dot: dot, halo: halo, body: body };
   }
 
   function buildSvg() {
@@ -325,7 +325,27 @@
     root.appendChild(ship.svg);
     root.appendChild(readout.box);
 
-    var state = { activeModule: -1, lastSecond: -1, lastMinute: -1, raf: 0, timer: 0, alive: true };
+    var state = { activeModule: -1, lastSecond: -1, lastMinute: -1, raf: 0, timer: 0, alive: true, murph: false, murphLetter: -2 };
+    var murphLine = null;
+
+    function renderMurphLine(letter) {
+      if (letter === state.murphLetter) return;
+      state.murphLetter = letter;
+      if (!murphLine) {
+        murphLine = document.createElement('div');
+        murphLine.className = 'endurance-clock__murph';
+        readout.box.appendChild(murphLine);
+      }
+      murphLine.textContent = '';
+      murphLine.appendChild(document.createTextNode('Murph\u2019s watch \u00b7 '));
+      var word = global.Murph.WORD;
+      for (var i = 0; i < word.length; i++) {
+        var span = document.createElement('span');
+        span.className = 'ec-letter' + (i === letter ? ' is-sending' : '');
+        span.textContent = word[i];
+        murphLine.appendChild(span);
+      }
+    }
 
     function zoneName(d) {
       var parts = zoneFmt.formatToParts(d);
@@ -346,6 +366,17 @@
       var hourF = (h % 12) + minF / 60;
 
       var secDeg = secF * 6;
+      var flash = 0;
+      if (state.murph && global.Murph) {
+        // Murph's watch: a quartz tick instead of a sweep, flaring in Morse
+        var st = global.Murph.stateAt(now.getTime());
+        secDeg = s * 6;
+        flash = st.flash;
+        renderMurphLine(st.letter);
+      }
+      ship.seconds.halo.setAttribute('r', fmt(9 + 11 * flash));
+      ship.seconds.halo.setAttribute('opacity', fmt(0.45 + 0.5 * flash));
+      ship.seconds.body.setAttribute('r', fmt(4 + 2 * flash));
       var minDeg = minF * 6;
       var hourDeg = hourF * 30;
 
@@ -406,6 +437,16 @@
 
     var api = {
       root: root,
+      /** Murph's watch: the second indicator ticks STAY in Morse (needs js/murph.js). */
+      setMurph: function (on) {
+        on = !!on && !!global.Murph;
+        if (on === state.murph) return;
+        state.murph = on;
+        state.murphLetter = -2;
+        root.classList.toggle('is-murph', on);
+        if (!on && murphLine) { murphLine.remove(); murphLine = null; }
+      },
+      isMurph: function () { return state.murph; },
       destroy: function () {
         state.alive = false;
         if (state.raf) global.cancelAnimationFrame(state.raf);
