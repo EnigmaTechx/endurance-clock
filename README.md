@@ -58,12 +58,14 @@ ship's rotating frame: the ring holds still while the starfield and Gargantua
 wheel slowly around the ring's axis, which is what the crew would see from a
 window. Move the mouse or drag to tilt the view; it drifts gently when idle.
 
-- `js/ship.js` builds the ship: twelve chamfered modules nearly touching,
-  joined by a corridor ring, with the film's layout of roles (command modules at
-  the cardinals where the truss spokes attach, engine modules with their bells on
-  the far side, landing modules with the big hatches and two Landers berthed on
-  the inside), a hub with the axial docking port, the hands and the orbiting
-  second indicator. Everything is procedural geometry; there is no model file.
+- `js/ship.js` builds the ship: twelve chamfered modules standing radially around
+  the ring, long axes pointing at the hub, joined side to side by corridor tubes;
+  four thick spokes from the hub to the inner ends of the command modules; the
+  film's layout of roles (command at the cardinals, engine modules with their
+  bells on the far side, landing modules with the big hatches and two Landers
+  berthed on inner ends); a hub with the axial docking port; the hands and the
+  orbiting second indicator. The Ranger docks on a module's inner end. Everything
+  is procedural geometry; there is no model file.
 - `js/gargantua.js` is a stylised black hole: a shadow sphere, a shader-driven
   accretion disc with Keplerian shear and relativistic beaming, and a lensed halo.
   It is geometry and shaders, not ray-traced lensing, so it runs on phones.
