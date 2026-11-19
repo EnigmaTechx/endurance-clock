@@ -421,6 +421,133 @@ function buildTrail(segments) {
   return new THREE.Line(geo, mat);
 }
 
+// ---------- a loaded model in place of the procedural hull ----------
+
+/** Copy the triangles listed in `tris` out of a non-indexed geometry. */
+function pickTriangles(geo, tris) {
+  const out = new THREE.BufferGeometry();
+  for (const name of Object.keys(geo.attributes)) {
+    const src = geo.attributes[name];
+    const size = src.itemSize;
+    const arr = new Float32Array(tris.length * 3 * size);
+    let k = 0;
+    for (const t of tris) {
+      for (let v = 0; v < 3; v++) {
+        const i = t * 3 + v;
+        for (let c = 0; c < size; c++) arr[k++] = src.array[i * size + c];
+      }
+    }
+    out.setAttribute(name, new THREE.BufferAttribute(arr, size));
+  }
+  return out;
+}
+
+function disposeTree(obj) {
+  obj.traverse((o) => {
+    if (o.geometry) o.geometry.dispose();
+    const mats = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
+    for (const mat of mats) { if (mat.map) mat.map.dispose(); mat.dispose(); }
+  });
+}
+
+/**
+ * Bake a loaded glTF scene of the ship into this frame, scale it so the
+ * hull's outer radius matches the procedural ring, and split the hull into
+ * twelve sector groups so each hour can light up. Returns module records
+ * and the measured dimensions.
+ *
+ * Expects the model's ring in its YZ plane with the spin axis along +X (as
+ * the devPilot Endurance is built); +X ends up pointing away from the camera.
+ */
+function bakeModel(scene, glowTex) {
+  const stage = new THREE.Group();
+  stage.add(scene);
+  scene.rotation.y = -Math.PI / 2;        // model +X -> our +Z
+  stage.updateMatrixWorld(true);
+
+  const baked = [];
+  const tuned = new Set();
+  scene.traverse((o) => {
+    if (!o.isMesh) return;
+    const geo = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+    geo.applyMatrix4(o.matrixWorld);
+    const name = o.name || (o.parent && o.parent.name) || '';
+    // the model's near-white paint blows out under the key light and bloom; sit it
+    // where the procedural hull was, and keep it matte
+    if (!tuned.has(o.material)) {
+      tuned.add(o.material);
+      o.material.color.multiplyScalar(0.72);
+      o.material.metalness = Math.min(o.material.metalness, 0.12);
+      o.material.roughness = Math.max(o.material.roughness, 0.62);
+    }
+    baked.push({ geo, material: o.material, hull: /^EnduranceShip/.test(name) });
+  });
+
+  // scale so the hull's outer radius matches the procedural ring
+  let maxR = 0;
+  for (const b of baked) {
+    if (!b.hull) continue;
+    const p = b.geo.attributes.position;
+    for (let i = 0; i < p.count; i++) maxR = Math.max(maxR, Math.hypot(p.getX(i), p.getY(i)));
+  }
+  const s = MODULE_OUTER_R / (maxR || 1);
+  for (const b of baked) b.geo.scale(s, s, s);
+
+  // split hull triangles into sectors; anything inside the hub radius is core
+  const CORE_R = MODULE_INNER_R * 0.75;
+  const sectors = Array.from({ length: 12 }, () => []);
+  const core = [];
+  let innerR = Infinity, topZ = -Infinity;
+  for (const b of baked) {
+    if (!b.hull) { core.push({ geo: b.geo, material: b.material }); continue; }
+    const p = b.geo.attributes.position;
+    const buckets = Array.from({ length: 13 }, () => []);
+    for (let t = 0; t < p.count / 3; t++) {
+      const i = t * 3;
+      const cx = (p.getX(i) + p.getX(i + 1) + p.getX(i + 2)) / 3;
+      const cy = (p.getY(i) + p.getY(i + 1) + p.getY(i + 2)) / 3;
+      const r = Math.hypot(cx, cy);
+      if (r < CORE_R) { buckets[12].push(t); continue; }
+      const deg = THREE.MathUtils.radToDeg(Math.atan2(cy, cx));
+      const sector = ((Math.round((90 - deg) / 30) % 12) + 12) % 12;
+      buckets[sector].push(t);
+      innerR = Math.min(innerR, r);
+      for (let v = 0; v < 3; v++) topZ = Math.max(topZ, p.getZ(i + v));
+    }
+    for (let k = 0; k < 12; k++) if (buckets[k].length) sectors[k].push({ geo: pickTriangles(b.geo, buckets[k]), material: b.material.clone() });
+    if (buckets[12].length) core.push({ geo: pickTriangles(b.geo, buckets[12]), material: b.material });
+    b.geo.dispose();
+  }
+  // the hull may not reach the ring plane's very top; keep the hands clear of the deepest point
+  const dims = { innerR: isFinite(innerR) ? innerR : MODULE_INNER_R, outerR: MODULE_OUTER_R, topZ: isFinite(topZ) ? topZ : MOD_D / 2 };
+  dims.cruiseZ = dims.topZ + 1.3;
+
+  const coreGroup = new THREE.Group();
+  for (const c of core) coreGroup.add(new THREE.Mesh(c.geo, c.material));
+
+  const modules = sectors.map((pieces, i) => {
+    const holder = new THREE.Group();
+    const bodyMats = [];
+    for (const piece of pieces) {
+      holder.add(new THREE.Mesh(piece.geo, piece.material));
+      bodyMats.push(piece.material);
+    }
+    const glow = glowSprite(glowTex, COLORS.accent, 8.5, 0);
+    const a = THREE.MathUtils.degToRad(90 - i * 30);
+    const midR = (dims.innerR + dims.outerR) / 2;
+    glow.position.set(Math.cos(a) * midR, Math.sin(a) * midR, dims.topZ + 0.3);
+    holder.add(glow);
+    const cardinal = i % 3 === 0;
+    return {
+      holder, bodyMats, baseColor: bodyMats[0] ? bodyMats[0].color.clone() : new THREE.Color(0xffffff), windowMat: null, glow, cardinal, role: ROLE(i),
+      // the Ranger docks on the inner end; above the spoke root on command modules
+      dock: { radius: dims.innerR - 0.57, tangent: 0, z: cardinal ? 1.1 : 0 }
+    };
+  });
+
+  return { coreGroup, modules, dims };
+}
+
 // ---------- assembly ----------
 
 export function buildShip() {
@@ -428,17 +555,24 @@ export function buildShip() {
   const glowTex = glowTexture();
   const m = makeMaterials();
 
-  group.add(buildCorridors(m));
-  group.add(buildSpokes(m));
+  const procedural = { corridors: buildCorridors(m), spokes: buildSpokes(m), hub: buildHub(m), holders: [] };
+  group.add(procedural.corridors);
+  group.add(procedural.spokes);
 
   const modules = [];
   for (let i = 0; i < 12; i++) {
     const mod = buildModule(i, glowTex, m);
+    mod.bodyMats = [mod.bodyMat];
+    mod.baseColor = new THREE.Color(COLORS.hull);
     group.add(mod.holder);
     modules.push(mod);
+    procedural.holders.push(mod.holder);
   }
 
-  group.add(buildHub(m));
+  group.add(procedural.hub);
+
+  const dims = { innerR: MODULE_INNER_R, outerR: MODULE_OUTER_R, topZ: MOD_D / 2, cruiseZ: 2.3 };
+  let modelCore = null;
 
   const hour = buildHand(HOUR_LEN, 0.27, 0.9, 0.2, HAND_Z.hour, glowTex);
   const minute = buildHand(MINUTE_LEN, 0.16, 1.05, 0.14, HAND_Z.minute, glowTex);
@@ -473,8 +607,36 @@ export function buildShip() {
   const accent = new THREE.Color(COLORS.accent);
   const hot = new THREE.Color(0xfff1dc);
   const windowCool = new THREE.Color(COLORS.window);
-  const hullBase = new THREE.Color(COLORS.hull);
   const state = { active: -1, blend: new Array(12).fill(0), pulse: new Array(12).fill(0) };
+
+  /**
+   * Replace the procedural hull with a loaded model (a glTF scene). The hands,
+   * second craft, trail and lights stay; the module records and docks are
+   * rebuilt in place so holders of `ship.modules` and `ship.docks` see the new ones.
+   */
+  function setModel(scene) {
+    const baked = bakeModel(scene, glowTex);
+    for (const obj of [procedural.corridors, procedural.spokes, procedural.hub, ...procedural.holders]) {
+      group.remove(obj);
+      disposeTree(obj);
+    }
+    procedural.holders.length = 0;
+    if (modelCore) { group.remove(modelCore); disposeTree(modelCore); }
+    modelCore = baked.coreGroup;
+    group.add(modelCore);
+    for (const mod of baked.modules) group.add(mod.holder);
+    modules.length = 0;
+    modules.push(...baked.modules);
+    docks.length = 0;
+    docks.push(...baked.modules.map((mod) => mod.dock));
+    Object.assign(dims, baked.dims);
+    state.blend.fill(0);
+    // lift the hands clear of the deeper hull
+    hour.position.z = dims.topZ + 0.3;
+    minute.position.z = dims.topZ + 0.55;
+    cap.position.z = dims.topZ + 0.72;
+    group.userData.model = true;
+  }
   let trailDeg = TRAIL_DEG;
   const trailBoosts = {};
 
@@ -516,10 +678,14 @@ export function buildShip() {
       if (Math.abs(state.blend[i] - target) < 0.002) state.blend[i] = target;
       const b = Math.max(state.blend[i], state.pulse[i]);
       const mod = modules[i];
-      mod.bodyMat.emissive.copy(accent).multiplyScalar(0.55 * b);
-      mod.bodyMat.color.lerpColors(hullBase, accent, b * 0.8);
-      mod.windowMat.emissive.lerpColors(windowCool, hot, b);
-      mod.windowMat.emissiveIntensity = 0.7 + 1.5 * b;
+      for (const mat of mod.bodyMats) {
+        mat.emissive.copy(accent).multiplyScalar(0.55 * b);
+        mat.color.lerpColors(mod.baseColor, accent, b * (mat.map ? 0.45 : 0.8));
+      }
+      if (mod.windowMat) {
+        mod.windowMat.emissive.lerpColors(windowCool, hot, b);
+        mod.windowMat.emissiveIntensity = 0.7 + 1.5 * b;
+      }
       mod.glow.material.opacity = 0.55 * b;
       if (i === state.active) {
         moduleLight.intensity = 9 * b;
@@ -552,5 +718,5 @@ export function buildShip() {
 
   const docks = modules.map((mod) => mod.dock);
 
-  return { group, modules, docks, hour, minute, craft, trail, glowTex, setActive, setPulses, setTrailBoost, setCraftFlare, updateModules, setAngles };
+  return { group, modules, docks, dims, hour, minute, craft, trail, glowTex, setActive, setPulses, setTrailBoost, setCraftFlare, setModel, updateModules, setAngles };
 }

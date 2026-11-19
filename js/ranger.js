@@ -139,8 +139,10 @@ export function buildRanger(glowTex) {
    * @param timeline from dockTimeline()
    * @param docks    per-module {radius, tangent, z}: hatch radius, tangential offset and height
    * @param time     scene time in seconds (for thruster flicker)
+   * @param cruiseZ  transit height; defaults to CRUISE_Z
    */
-  function update(timeline, docks, time) {
+  function update(timeline, docks, time, cruiseZ) {
+    const CZ = cruiseZ || CRUISE_Z;
     const { from, to, p } = timeline;
     const dFrom = docks[from];
     const dTo = docks[to];
@@ -157,20 +159,20 @@ export function buildRanger(glowTex) {
       const q = easeInOut(p / PHASE_UNDOCK);
       theta = thFrom;
       r = lerp(dFrom.radius, cruiseR, q);
-      z = lerp(dFrom.z || 0, CRUISE_Z, q);
+      z = lerp(dFrom.z || 0, CZ, q);
       tan = lerp(dFrom.tangent, 0, q);
       thrusters = bump(q, 0, 0.55);
     } else if (p < PHASE_DOCK) {
       const q = easeInOut((p - PHASE_UNDOCK) / (PHASE_DOCK - PHASE_UNDOCK));
       theta = lerp(thFrom, thTo, q);
-      r = cruiseR; z = CRUISE_Z; tan = 0;
+      r = cruiseR; z = CZ; tan = 0;
       engine = Math.sin(q * Math.PI);
       roll = Math.sin(q * Math.PI) * 0.28;
     } else {
       const q = easeOut((p - PHASE_DOCK) / (1 - PHASE_DOCK));
       theta = thTo;
       r = lerp(cruiseR, dTo.radius, q);
-      z = lerp(CRUISE_Z, dTo.z || 0, q);
+      z = lerp(CZ, dTo.z || 0, q);
       tan = lerp(0, dTo.tangent, q);
       thrusters = bump(q, 0.15, 0.95);
       flash = bump(q, 0.9, 1.0);

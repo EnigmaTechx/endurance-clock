@@ -331,7 +331,7 @@ export function createAlarm(opts) {
     if (state.alarmAt) {
       const h = state.alarmAt.getHours() % 12, m = state.alarmAt.getMinutes();
       const clockDeg = (h + m / 60) * 30;
-      placeOnRing(beacon, clockDeg, MODULE_OUTER_R + 0.55, 0.5);
+      placeOnRing(beacon, clockDeg, (ship.dims ? ship.dims.outerR : MODULE_OUTER_R) + 0.55, 0.5);
       beacon.visible = true;
       beaconGlow.material.opacity = reduceMotion ? 0.6 : 0.45 + 0.3 * Math.sin(t * 2.2);
       const breathe = reduceMotion ? 0.45 : 0.3 + 0.3 * (0.5 + 0.5 * Math.sin(t * 2.2));

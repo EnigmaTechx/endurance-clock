@@ -56,8 +56,8 @@ async function routeThree(page) {
     await page.clock.setFixedTime(FIXED_TIME);
     await page.goto(`${base}/?quality=high&sun=0`);
     await page.addStyleTag({ content: HIDE_CHROME });
-    // let the module highlight settle, then move in for a hero framing
-    await page.waitForTimeout(3000);
+    // let the model load and the module highlight settle, then move in for a hero framing
+    await page.waitForTimeout(7000);
     await page.evaluate(() => {
       const E = window.__endurance;
       E.camera.position.multiplyScalar(0.92);
@@ -77,7 +77,7 @@ async function routeThree(page) {
     await page.clock.setFixedTime(FIXED_TIME);
     await page.goto(`${base}/?quality=high&sun=0`);
     await page.addStyleTag({ content: HIDE_CHROME });
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(7000);
     await page.evaluate((f) => {
       const E = window.__endurance;
       // no Gargantua in the icon; frame the ring to the square

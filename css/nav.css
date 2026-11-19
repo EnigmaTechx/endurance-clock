@@ -19,7 +19,27 @@
   pointer-events: none;
 }
 
-.site-nav__brand { opacity: 0.8; }
+.site-nav__brand {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  opacity: 0.8;
+}
+
+.site-nav__credit {
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: none;
+  color: #4f5866;
+  text-decoration: none;
+  pointer-events: auto;
+}
+
+.site-nav__credit:hover,
+.site-nav__credit:focus-visible {
+  color: #c9d2e0;
+  outline: none;
+}
 
 .site-nav__links {
   position: relative;

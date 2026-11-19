@@ -20,6 +20,8 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 import { buildShip, ORBIT_R } from './ship.js';
 import { buildGargantua } from './gargantua.js';
@@ -50,6 +52,9 @@ const DEFAULTS = {
   overlays: null,         // { top: Element, bottom: Element } to keep the ring clear of
   alarmControls: null,    // panel elements for the alarm (see alarm.js); API works without
   fallback: null,         // element to reveal if WebGL is unavailable
+  model: true,            // load the Endurance model (true, a URL, or false for the procedural ship)
+  decoderPath: 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/libs/draco/',
+  onModel: null,          // () => void, when the model has replaced the procedural hull
   onMillerChange: null,   // (on: boolean, state: {t0}) => void
   onMurphChange: null,    // (on: boolean) => void
   onReady: null
@@ -165,6 +170,33 @@ export function mount(container, options) {
 
   const ranger = buildRanger(ship.glowTex);
   ship.group.add(ranger.group);
+  let destroyed = false;
+
+  // the real hull: devPilot's "Interstellar | Endurance" (CC BY 4.0), swapped in
+  // once it has loaded; the procedural ship shows until then and stays if it fails
+  let modelLoaded = false;
+  if (opts.model) {
+    const url = typeof opts.model === 'string' ? opts.model : new URL('../assets/models/endurance.glb', import.meta.url).href;
+    const draco = new DRACOLoader();
+    draco.setDecoderPath(opts.decoderPath);
+    const loader = new GLTFLoader();
+    loader.setDRACOLoader(draco);
+    loader.load(url, (gltf) => {
+      if (destroyed) { draco.dispose(); return; }
+      try {
+        ship.setModel(gltf.scene);
+        modelLoaded = true;
+        container.classList.add('ec3d--model');
+        if (opts.onModel) opts.onModel();
+      } catch (err) {
+        console.warn('Endurance model could not be used; keeping the procedural ship.', err);
+      }
+      draco.dispose();
+    }, undefined, (err) => {
+      console.warn('Endurance model not loaded; keeping the procedural ship.', err);
+      draco.dispose();
+    });
+  }
 
   // ---------- lights ----------
 
@@ -458,7 +490,6 @@ export function mount(container, options) {
   let visible = true;
   let paused = false;
   let stepTimer = 0;
-  let destroyed = false;
 
   function frame() {
     const dt = Math.min(threeClock.getDelta(), 0.1);
@@ -492,7 +523,7 @@ export function mount(container, options) {
       ship.craft.visible = true;
       ship.trail.visible = true;
       if (readout) readout.update(now);
-      ranger.update(dockTimeline(now, reduceMotion), ship.docks, t);
+      ranger.update(dockTimeline(now, reduceMotion), ship.docks, t, ship.dims.cruiseZ);
     }
     if (!reduceMotion) {
       const skyRate = miller.on ? 1 + 59 * Math.min(1, (rateAt(millerTau()) - 1) / (FACTOR - 1)) : 1;
@@ -588,6 +619,7 @@ export function mount(container, options) {
     isMiller: () => miller.on,
     setMurph,
     isMurph: () => murph.on,
+    hasModel: () => modelLoaded,
     pause() { paused = true; stop(); },
     resume() { paused = false; start(); },
     isRunning: () => running,
@@ -614,7 +646,7 @@ export function mount(container, options) {
       renderer.dispose();
       canvas.remove();
       if (overlay) overlay.remove();
-      container.classList.remove('ec3d', 'ec3d--transparent', 'clock3d--miller');
+      container.classList.remove('ec3d', 'ec3d--transparent', 'ec3d--model', 'clock3d--miller');
       container.removeAttribute('role');
       container.removeAttribute('aria-label');
       delete container.__enduranceClock3D;

@@ -55,6 +55,7 @@ let clock;
 try {
   clock = mount(document.getElementById('clock'), {
     quality: params.get('quality') || 'auto',
+    model: params.get('ship') !== 'procedural',
     hour12: params.has('hour12') ? params.get('hour12') === 'true' : undefined,
     locale: params.get('locale') || undefined,
     timeOffset,
