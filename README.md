@@ -51,6 +51,22 @@ The site is static, so any static host works. It is deployed on Vercel at
 HTTP on it, so the site only loads once the certificate exists. Vercel handles
 that; any other host must serve HTTPS too.
 
+## The ship model
+
+The hull is ["Interstellar | Endurance"](https://skfb.ly/p6vzT) by
+[devPilot](https://sketchfab.com/devPilot), licensed
+[CC BY 4.0](http://creativecommons.org/licenses/by/4.0/) (see
+`assets/models/CREDITS.md` for the changes made). It ships as a 390 KB
+Draco-compressed glTF at `assets/models/endurance.glb`; the Draco decoder comes
+from the same CDN as Three.js. At load the clock rotates and scales the model into
+its frame, splits the hull into twelve sectors by angle so the current hour's
+module can light up, and measures the module radii and depth so the hands, the
+Ranger's docking points and the alarm beacon follow the real geometry.
+
+The procedural ship shows until the model has loaded and stays if it fails to
+load. `?ship=procedural` keeps it on purpose; the widget's `model` option takes
+`true`, a URL, or `false`, and `decoderPath` points at a Draco decoder.
+
 ## How it works
 
 `index.html` renders the Endurance as a real object. The camera rides in the
@@ -127,8 +143,10 @@ clock.pause(); clock.resume();
 clock.destroy();
 ```
 
-Options: `transparent` (alpha canvas so the page shows through; bloom is off in
-this mode), `readout`, `gargantua`, `stars`, `quality` (`auto` | `low` | `high`),
+Options: `model` (`true` for the bundled Endurance model, a URL, or `false` for the
+procedural ship), `decoderPath` (Draco decoder location), `onModel`, `transparent`
+(alpha canvas so the page shows through; bloom is off in this mode), `readout`,
+`gargantua`, `stars`, `quality` (`auto` | `low` | `high`),
 `interactive`, `sway`, `pitch` (camera look-down angle, degrees), `fit` (framing
 margin; smaller is tighter), `pauseWhenHidden`, `hour12`, `locale`, `daylight`
 (use `js/daylight.js` if the page loaded it), `overlays` (`{ top, bottom }`

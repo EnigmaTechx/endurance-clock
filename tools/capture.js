@@ -6,8 +6,10 @@
  *   npx playwright install chromium
  *   node tools/capture.js
  *
- * Set THREE_LOCAL=/path/to/node_modules/three to serve Three.js from disk
- * instead of the CDN (handy on a machine without internet access).
+ * Set THREE_LOCAL=/path/to/node_modules/three to serve Three.js (and the Draco
+ * decoder) from disk instead of the CDN (handy on a machine without internet
+ * access). Service workers are blocked in the capture contexts so the page's
+ * worker cannot intercept those stubbed requests.
  */
 const { chromium } = require('playwright');
 const http = require('http');
@@ -50,34 +52,36 @@ async function routeThree(page) {
 
   // ---- Open Graph: the 3D ship, 1200x630 ----
   {
-    const ctx = await browser.newContext({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 });
+    const ctx = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 });
     const page = await ctx.newPage();
     await routeThree(page);
     await page.clock.setFixedTime(FIXED_TIME);
     await page.goto(`${base}/?quality=high&sun=0`);
     await page.addStyleTag({ content: HIDE_CHROME });
-    // let the module highlight settle, then move in for a hero framing
-    await page.waitForTimeout(3000);
+    // let the model load and the module highlight settle, then move in for a hero framing
+    await page.waitForTimeout(7000);
     await page.evaluate(() => {
       const E = window.__endurance;
       E.camera.position.multiplyScalar(0.92);
       E.camera.lookAt(0, 0.2, 0);
     });
     await page.waitForTimeout(1200);
-    await page.screenshot({ path: path.join(OUT, 'og.png') });
+    // freeze the loop so the screenshot is not racing frames (slow on software GL)
+    await page.evaluate(() => window.__endurance.pause());
+    await page.screenshot({ path: path.join(OUT, 'og.png'), timeout: 180000 });
     await ctx.close();
     console.log('assets/og.png');
   }
 
   // ---- Icons: the ring on space, square, tightly framed ----
   async function icon(size, fit, file) {
-    const ctx = await browser.newContext({ viewport: { width: size, height: size }, deviceScaleFactor: 1 });
+    const ctx = await browser.newContext({ serviceWorkers: 'block', viewport: { width: size, height: size }, deviceScaleFactor: 1 });
     const page = await ctx.newPage();
     await routeThree(page);
     await page.clock.setFixedTime(FIXED_TIME);
     await page.goto(`${base}/?quality=high&sun=0`);
     await page.addStyleTag({ content: HIDE_CHROME });
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(7000);
     await page.evaluate((f) => {
       const E = window.__endurance;
       // no Gargantua in the icon; frame the ring to the square
@@ -86,7 +90,8 @@ async function routeThree(page) {
       E.camera.lookAt(0, 0, 0);
     }, fit);
     await page.waitForTimeout(800);
-    await page.screenshot({ path: path.join(OUT, file) });
+    await page.evaluate(() => window.__endurance.pause());
+    await page.screenshot({ path: path.join(OUT, file), timeout: 180000 });
     await ctx.close();
     console.log('assets/' + file);
   }
