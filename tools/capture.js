@@ -54,7 +54,7 @@ async function routeThree(page) {
     const page = await ctx.newPage();
     await routeThree(page);
     await page.clock.setFixedTime(FIXED_TIME);
-    await page.goto(`${base}/3d/?quality=high&sun=0`);
+    await page.goto(`${base}/?quality=high&sun=0`);
     await page.addStyleTag({ content: HIDE_CHROME });
     // let the module highlight settle, then move in for a hero framing
     await page.waitForTimeout(3000);
@@ -69,28 +69,33 @@ async function routeThree(page) {
     console.log('assets/og.png');
   }
 
-  // ---- Icons: the 2D ring on space, square ----
-  async function icon(size, clockPx, file) {
+  // ---- Icons: the ring on space, square, tightly framed ----
+  async function icon(size, fit, file) {
     const ctx = await browser.newContext({ viewport: { width: size, height: size }, deviceScaleFactor: 1 });
     const page = await ctx.newPage();
+    await routeThree(page);
     await page.clock.setFixedTime(FIXED_TIME);
-    await page.goto(`${base}/?sun=0`);
-    await page.addStyleTag({ content: HIDE_CHROME + `
-      .stage { padding: 0; min-height: ${size}px; }
-      .stage .endurance-clock { width: ${clockPx}px !important; grid-template-rows: auto; }
-      .endurance-clock__gargantua::before { width: 120%; }
-    ` });
-    await page.waitForTimeout(1200);
+    await page.goto(`${base}/?quality=high&sun=0`);
+    await page.addStyleTag({ content: HIDE_CHROME });
+    await page.waitForTimeout(3000);
+    await page.evaluate((f) => {
+      const E = window.__endurance;
+      // no Gargantua in the icon; frame the ring to the square
+      E.gargantua.group.visible = false;
+      E.camera.position.multiplyScalar(f);
+      E.camera.lookAt(0, 0, 0);
+    }, fit);
+    await page.waitForTimeout(800);
     await page.screenshot({ path: path.join(OUT, file) });
     await ctx.close();
     console.log('assets/' + file);
   }
-  await icon(512, 470, 'icon-512.png');
-  await icon(512, 360, 'icon-maskable-512.png');   // ring inside the 80% safe zone
-  await icon(192, 176, 'icon-192.png');
-  await icon(180, 166, 'apple-touch-icon.png');
-  await icon(64, 62, 'favicon-64.png');
-  await icon(32, 32, 'favicon-32.png');
+  await icon(512, 0.78, 'icon-512.png');
+  await icon(512, 1.0, 'icon-maskable-512.png');   // ring inside the 80% safe zone
+  await icon(192, 0.78, 'icon-192.png');
+  await icon(180, 0.78, 'apple-touch-icon.png');
+  await icon(64, 0.72, 'favicon-64.png');
+  await icon(32, 0.72, 'favicon-32.png');
 
   await browser.close();
   server.close();

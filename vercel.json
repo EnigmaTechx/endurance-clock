@@ -1,0 +1,7 @@
+{
+  "redirects": [
+    { "source": "/3d", "destination": "/", "permanent": true },
+    { "source": "/3d/", "destination": "/", "permanent": true },
+    { "source": "/3d/embed.html", "destination": "/embed.html", "permanent": true }
+  ]
+}
