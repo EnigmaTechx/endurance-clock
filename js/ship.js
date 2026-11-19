@@ -349,8 +349,13 @@ function handShape(len, halfW, tail) {
   return s;
 }
 
-function buildHand(len, halfW, tail, thickness, z, glowTex) {
-  const g = new THREE.Group();
+/** (Re)build a hand's parts inside `g` for a given length. */
+function fillHand(g, len, halfW, tail, thickness, glowTex) {
+  while (g.children.length) {
+    const c = g.children.pop();
+    if (c.geometry) c.geometry.dispose();
+    if (c.material && c.material.dispose) c.material.dispose();
+  }
   const geo = new THREE.ExtrudeGeometry(handShape(len, halfW, tail), {
     depth: thickness, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.04, bevelSegments: 2
   });
@@ -372,7 +377,12 @@ function buildHand(len, halfW, tail, thickness, z, glowTex) {
   const spark = glowSprite(glowTex, COLORS.accent, 1.2, 0.5);
   spark.position.set(0, len - 0.3, thickness / 2 + 0.05);
   g.add(spark);
+  g.userData.hand = { halfW, tail, thickness, len };
+}
 
+function buildHand(len, halfW, tail, thickness, z, glowTex) {
+  const g = new THREE.Group();
+  fillHand(g, len, halfW, tail, thickness, glowTex);
   g.position.z = z;
   return g;
 }
@@ -631,10 +641,14 @@ export function buildShip() {
     docks.push(...baked.modules.map((mod) => mod.dock));
     Object.assign(dims, baked.dims);
     state.blend.fill(0);
-    // lift the hands clear of the deeper hull
+    // lift the hands clear of the deeper hull, and shorten them so they stay
+    // inside the docked Ranger's radius rather than crossing it and the modules
     hour.position.z = dims.topZ + 0.3;
     minute.position.z = dims.topZ + 0.55;
     cap.position.z = dims.topZ + 0.72;
+    const reach = dims.innerR - 0.57 - 0.45;        // just short of the Ranger's docked collar
+    fillHand(hour, reach * 0.78, 0.27, 0.9, 0.2, glowTex);
+    fillHand(minute, reach, 0.16, 1.05, 0.14, glowTex);
     group.userData.model = true;
   }
   let trailDeg = TRAIL_DEG;
