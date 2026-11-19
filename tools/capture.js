@@ -66,7 +66,9 @@ async function routeThree(page) {
       E.camera.lookAt(0, 0.2, 0);
     });
     await page.waitForTimeout(1200);
-    await page.screenshot({ path: path.join(OUT, 'og.png') });
+    // freeze the loop so the screenshot is not racing frames (slow on software GL)
+    await page.evaluate(() => window.__endurance.pause());
+    await page.screenshot({ path: path.join(OUT, 'og.png'), timeout: 180000 });
     await ctx.close();
     console.log('assets/og.png');
   }
@@ -88,7 +90,8 @@ async function routeThree(page) {
       E.camera.lookAt(0, 0, 0);
     }, fit);
     await page.waitForTimeout(800);
-    await page.screenshot({ path: path.join(OUT, file) });
+    await page.evaluate(() => window.__endurance.pause());
+    await page.screenshot({ path: path.join(OUT, file), timeout: 180000 });
     await ctx.close();
     console.log('assets/' + file);
   }
