@@ -17,7 +17,7 @@ export const DOCK_LEAD = 24;   // seconds before the hour the Ranger undocks
 
 const PHASE_UNDOCK = 0.18;     // fraction of the lead spent pushing off
 const PHASE_DOCK = 0.8;        // fraction at which the final approach starts
-const CRUISE_Z = 1.9;          // height above the ring plane in transit
+const CRUISE_Z = 2.3;          // height above the ring plane in transit, clear of the hands
 const CRUISE_IN = 1.5;         // how far inside the hatch radius the transit arc runs
 
 // ---------- timeline ----------
@@ -137,7 +137,7 @@ export function buildRanger(glowTex) {
 
   /**
    * @param timeline from dockTimeline()
-   * @param docks    per-module {radius, tangent}: hatch radius and tangential offset
+   * @param docks    per-module {radius, tangent, z}: hatch radius, tangential offset and height
    * @param time     scene time in seconds (for thruster flicker)
    */
   function update(timeline, docks, time) {
@@ -151,13 +151,13 @@ export function buildRanger(glowTex) {
     let theta, r, z, tan, engine = 0, thrusters = 0, roll = 0, flash = 0;
 
     if (from === to || p >= 1) {
-      theta = thTo; r = dTo.radius; z = 0; tan = dTo.tangent;
+      theta = thTo; r = dTo.radius; z = dTo.z || 0; tan = dTo.tangent;
       if (timeline.sinceDock < 1.6) flash = Math.exp(-timeline.sinceDock * 3) ;
     } else if (p < PHASE_UNDOCK) {
       const q = easeInOut(p / PHASE_UNDOCK);
       theta = thFrom;
       r = lerp(dFrom.radius, cruiseR, q);
-      z = lerp(0, CRUISE_Z, q);
+      z = lerp(dFrom.z || 0, CRUISE_Z, q);
       tan = lerp(dFrom.tangent, 0, q);
       thrusters = bump(q, 0, 0.55);
     } else if (p < PHASE_DOCK) {
@@ -170,7 +170,7 @@ export function buildRanger(glowTex) {
       const q = easeOut((p - PHASE_DOCK) / (1 - PHASE_DOCK));
       theta = thTo;
       r = lerp(cruiseR, dTo.radius, q);
-      z = lerp(CRUISE_Z, 0, q);
+      z = lerp(CRUISE_Z, dTo.z || 0, q);
       tan = lerp(0, dTo.tangent, q);
       thrusters = bump(q, 0.15, 0.95);
       flash = bump(q, 0.9, 1.0);
