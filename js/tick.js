@@ -9,7 +9,8 @@
  * at the first tap or key press on the page.
  *
  * The source can be changed: Miller's planet mode ticks once per Earth
- * day of dilated time with a deeper, slower sound, a nod to the score.
+ * day of dilated time with a deeper, slower sound, a nod to the score;
+ * Murph's watch ticks in Morse.
  *
  * Classic script: defines window.Tick and binds a #tick-toggle button if
  * one exists.

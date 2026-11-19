@@ -7,8 +7,8 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#04060c",
-  "theme_color": "#04060c",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "lang": "en",
   "icons": [
     { "src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
@@ -16,11 +16,10 @@
     { "src": "/assets/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "2D clock", "url": "/", "icons": [{ "src": "/assets/icon-192.png", "sizes": "192x192" }] },
-    { "name": "3D clock", "url": "/3d/", "icons": [{ "src": "/assets/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Miller's planet", "url": "/3d/?mode=miller", "icons": [{ "src": "/assets/icon-192.png", "sizes": "192x192" }] }
+    { "name": "Miller's planet", "url": "/?mode=miller", "icons": [{ "src": "/assets/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Murph's watch", "url": "/?murph=1", "icons": [{ "src": "/assets/icon-192.png", "sizes": "192x192" }] }
   ],
   "screenshots": [
-    { "src": "/assets/og.png", "sizes": "1200x630", "type": "image/png", "form_factor": "wide", "label": "The 3D Endurance clock with Gargantua" }
+    { "src": "/assets/og.png", "sizes": "1200x630", "type": "image/png", "form_factor": "wide", "label": "The Endurance clock with Gargantua" }
   ]
 }

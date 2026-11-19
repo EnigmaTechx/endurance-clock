@@ -11,8 +11,7 @@
  * already granted; the page never prompts for one), in which case they
  * are computed with the NOAA sunrise equation.
  *
- * Classic script: defines window.Daylight. Applies itself to a 2D clock
- * (.endurance-clock) on the page if one exists.
+ * Classic script: defines window.Daylight.
  */
 (function (global) {
   'use strict';
@@ -136,38 +135,8 @@
       if (status.state !== 'granted') return;
       navigator.geolocation.getCurrentPosition(function (pos) {
         location = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-        if (applyTo2D.root) applyTo2D(applyTo2D.root);
       }, function () {}, { maximumAge: 3600000, timeout: 8000 });
     }).catch(function () {});
-  }
-
-  // ---- 2D application: CSS custom properties on the component ----
-
-  function rgb(c) { return Math.round(c[0]) + ', ' + Math.round(c[1]) + ', ' + Math.round(c[2]); }
-
-  function applyTo2D(root) {
-    applyTo2D.root = root;
-    var p = at();
-    var s = root.style;
-    s.setProperty('--ec-disc-rgb', rgb(p.disc2d));
-    s.setProperty('--ec-disc-alpha', p.disc2dAlpha.toFixed(3));
-    s.setProperty('--ec-hull', 'rgb(' + rgb(p.hull) + ')');
-    s.setProperty('--ec-hand', 'rgb(' + rgb(p.hand) + ')');
-    document.documentElement.style.setProperty('--space', 'rgb(' + rgb(p.space) + ')');
-    if (global.Starfield && global.Starfield.setBrightness) global.Starfield.setBrightness(p.stars);
-  }
-
-  function start2D() {
-    var root = document.querySelector('.endurance-clock');
-    if (!root) return;
-    applyTo2D(root);
-    setInterval(function () { applyTo2D(root); }, 60000);
-    tryKnownLocation();
-  }
-
-  if (global.document) {
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start2D);
-    else start2D();
   }
 
   global.Daylight = { elevation: elevation, weights: weights, palette: palette, at: at, sunTimes: sunTimes, tryKnownLocation: tryKnownLocation };

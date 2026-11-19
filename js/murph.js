@@ -8,8 +8,7 @@
  * standard gaps. One loop takes 42 seconds. The timeline is anchored to
  * the epoch, so every open page sends the same letter at the same moment.
  *
- * Classic script: defines window.Murph. On the 2D page it also binds the
- * #murph-toggle button and the ?murph=1 flag; the 3D page wires its own.
+ * Classic script: defines window.Murph; the page wires the button.
  */
 (function (global) {
   'use strict';
@@ -78,33 +77,6 @@
       if (s.seg.on && s.unitInSegment === 0) return { at: unit * UNIT_MS, alt: s.seg.dash };
     }
     return null;
-  }
-
-  // ---- 2D page wiring (the component exposes setMurph) ----
-
-  function bind2D() {
-    var root = document.querySelector('[data-endurance-clock]');
-    if (!root) return;
-    var button = document.getElementById('murph-toggle');
-    var params = new URLSearchParams(location.search);
-    function api() { return root.__enduranceClock; }
-    function set(on) {
-      var a = api();
-      if (!a || !a.setMurph) return;
-      a.setMurph(on);
-      if (button) button.setAttribute('aria-pressed', String(on));
-      var url = new URL(location.href);
-      if (on) url.searchParams.set('murph', '1'); else url.searchParams.delete('murph');
-      history.replaceState(null, '', url);
-      if (global.Tick) global.Tick.setSource(on ? { next: nextTick, style: 'clock' } : null);
-    }
-    if (button) button.addEventListener('click', function () { set(!(api() && api().isMurph && api().isMurph())); });
-    if (params.get('murph') === '1') set(true);
-  }
-
-  if (global.document) {
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind2D);
-    else bind2D();
   }
 
   global.Murph = { WORD: WORD, MORSE: MORSE, TOTAL_UNITS: TOTAL, UNIT_MS: UNIT_MS, stateAt: stateAt, nextTick: nextTick };

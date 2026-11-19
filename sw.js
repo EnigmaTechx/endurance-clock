@@ -4,14 +4,15 @@
  * Every request goes to the network and the fresh response is cached, so a
  * deploy is picked up on the next load. Only when the network fails (offline,
  * or an installed app launched without a connection) is the cache used. The
- * core files are cached on install so the 2D clock works offline from the
- * first visit; the 3D clock needs Three.js from the CDN, which is cached once
- * it has loaded once.
+ * core files are cached on install so the clock works offline after the
+ * first visit, and Three.js from the CDN is cached once it has loaded once.
  */
-const VERSION = 'endurance-v1';
+const VERSION = 'endurance-v2';
 const CORE = [
-  '/', '/index.html', '/css/page.css', '/css/endurance-clock.css',
-  '/js/endurance-clock.js', '/js/starfield.js', '/js/parallax.js', '/js/daylight.js',
+  '/', '/index.html', '/css/nav.css', '/css/endurance-clock-3d.css', '/css/clock3d.css',
+  '/js/main.js', '/js/endurance-clock-3d.js', '/js/ship.js', '/js/gargantua.js', '/js/stars.js',
+  '/js/readout.js', '/js/ranger.js', '/js/miller.js', '/js/alarm.js',
+  '/js/daylight.js', '/js/tick.js', '/js/murph.js', '/js/nav.js',
   '/manifest.webmanifest', '/assets/icon-192.png', '/assets/icon-512.png',
   '/assets/favicon-32.png', '/assets/favicon-64.png', '/assets/apple-touch-icon.png'
 ];

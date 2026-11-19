@@ -1,7 +1,7 @@
 {
   "name": "endurance-clock",
-  "version": "1.0.0",
-  "description": "A web clock themed on the Endurance from Interstellar: a 2D SVG component and an embeddable Three.js 3D widget.",
+  "version": "2.0.0",
+  "description": "A web clock themed on the Endurance from Interstellar: an embeddable Three.js widget.",
   "homepage": "https://clock.enigmatech.dev",
   "repository": {
     "type": "git",
@@ -10,18 +10,16 @@
   "keywords": ["clock", "interstellar", "endurance", "three", "webgl", "svg"],
   "sideEffects": true,
   "exports": {
-    "./3d": "./3d/js/endurance-clock-3d.js",
-    "./3d/css": "./3d/css/endurance-clock-3d.css",
-    "./2d": "./js/endurance-clock.js",
-    "./2d/css": "./css/endurance-clock.css",
+    ".": "./js/endurance-clock-3d.js",
+    "./css": "./css/endurance-clock-3d.css",
+    "./3d": "./js/endurance-clock-3d.js",
+    "./3d/css": "./css/endurance-clock-3d.css",
     "./daylight": "./js/daylight.js",
     "./tick": "./js/tick.js",
     "./murph": "./js/murph.js",
     "./package.json": "./package.json"
   },
   "files": [
-    "3d/js",
-    "3d/css",
     "js",
     "css",
     "README.md"

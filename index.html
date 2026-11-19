@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Endurance Clock</title>
-  <meta name="description" content="A web clock themed on the Endurance from Interstellar. Twelve ring modules mark the hours; the hands sweep in real local time.">
-  <meta name="theme-color" content="#04060c">
+  <meta name="description" content="A 3D web clock themed on the Endurance from Interstellar, rendered with Three.js. Twelve ring modules mark the hours; the sky wheels past in the ship's rotating frame.">
+  <meta name="theme-color" content="#000000">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
@@ -17,7 +17,7 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Endurance Clock">
   <meta property="og:title" content="Endurance Clock">
-  <meta property="og:description" content="A web clock themed on the Endurance from Interstellar. Twelve ring modules mark the hours; the hands sweep in real local time.">
+  <meta property="og:description" content="The Endurance from Interstellar as a 3D clock. The ring holds still while the sky and Gargantua wheel past; a Ranger docks on the hour.">
   <meta property="og:url" content="https://clock.enigmatech.dev/">
   <meta property="og:image" content="https://clock.enigmatech.dev/assets/og.png">
   <meta property="og:image:width" content="1200">
@@ -25,47 +25,75 @@
   <meta property="og:image:alt" content="The Endurance ring from Interstellar drawn as a clock face, with Gargantua behind it.">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Endurance Clock">
-  <meta name="twitter:description" content="A web clock themed on the Endurance from Interstellar. Twelve ring modules mark the hours; the hands sweep in real local time.">
+  <meta name="twitter:description" content="The Endurance from Interstellar as a 3D clock. The ring holds still while the sky and Gargantua wheel past; a Ranger docks on the hour.">
   <meta name="twitter:image" content="https://clock.enigmatech.dev/assets/og.png">
   <link rel="stylesheet" href="css/nav.css">
-  <link rel="stylesheet" href="css/page.css">
-  <link rel="stylesheet" href="css/endurance-clock.css">
+  <link rel="stylesheet" href="css/endurance-clock-3d.css">
+  <link rel="stylesheet" href="css/clock3d.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
 </head>
 <body>
-  <div class="starfield-wrap" aria-hidden="true">
-    <canvas id="starfield" class="starfield"></canvas>
-  </div>
-
-  <nav class="site-nav" aria-label="Clock versions">
+  <nav class="site-nav" aria-label="Clock modes">
     <span class="site-nav__brand">Endurance</span>
     <span class="site-nav__links">
-      <span aria-current="page">2D</span>
-      <a href="3d/">3D</a>
       <button type="button" class="site-nav__menu" aria-expanded="false" aria-controls="nav-modes">Menu</button>
       <span class="site-nav__modes" id="nav-modes">
-        <button type="button" id="tilt-enable" class="site-nav__mode" hidden
-                title="Allow motion access so the clock responds to tilting the phone">Tilt</button>
+        <button type="button" id="miller-toggle" class="site-nav__mode" aria-pressed="false"
+                title="Miller's planet: one hour here is seven years on the Endurance">Miller</button>
+        <button type="button" id="alarm-toggle" class="site-nav__mode" aria-expanded="false" aria-controls="alarm-panel"
+                title="Set an alarm or a countdown">Alarm</button>
         <button type="button" id="murph-toggle" class="site-nav__mode" aria-pressed="false"
                 title="Murph's watch: the second hand ticks STAY in Morse">Murph</button>
         <button type="button" id="tick-toggle" class="site-nav__mode" aria-pressed="false"
-                title="A quiet tick on every second">Tick</button>
+                title="A quiet tick on every second (once per Earth day on Miller's planet)">Tick</button>
       </span>
     </span>
   </nav>
 
-  <p id="site-hint" class="site-hint" role="status" hidden></p>
+  <div id="alarm-panel" class="panel" hidden>
+    <div class="panel__row">
+      <label class="panel__label" for="alarm-time">Alarm</label>
+      <input type="time" id="alarm-time" class="panel__input">
+      <button type="button" id="alarm-set" class="panel__btn panel__btn--primary">Set</button>
+      <button type="button" id="alarm-clear" class="panel__btn" hidden>Clear</button>
+    </div>
+    <div class="panel__row">
+      <span class="panel__label">Countdown</span>
+      <button type="button" class="panel__btn" data-min="1">1m</button>
+      <button type="button" class="panel__btn" data-min="5">5m</button>
+      <button type="button" class="panel__btn" data-min="10">10m</button>
+      <button type="button" class="panel__btn" data-min="25">25m</button>
+    </div>
+    <div class="panel__row">
+      <span class="panel__label"></span>
+      <input type="number" id="countdown-minutes" class="panel__input panel__input--num" min="1" max="720" placeholder="min" inputmode="numeric">
+      <button type="button" id="countdown-start" class="panel__btn panel__btn--primary">Start</button>
+      <button type="button" id="countdown-cancel" class="panel__btn" hidden>Cancel</button>
+    </div>
+    <div class="panel__row">
+      <label class="panel__check"><input type="checkbox" id="alarm-sound" checked> Sound</label>
+    </div>
+  </div>
 
-  <main class="stage">
-    <div class="endurance-clock" data-endurance-clock></div>
-  </main>
+  <div id="clock" class="ec3d--page"></div>
 
-  <script src="js/starfield.js"></script>
-  <script src="js/endurance-clock.js"></script>
-  <script src="js/parallax.js"></script>
+  <div id="fallback" class="fallback" hidden>
+    <p>The Endurance clock needs WebGL, which this browser has turned off or doesn't support.</p>
+    <p><a href="https://github.com/EnigmaTechx/endurance-clock">About the project</a></p>
+  </div>
+
   <script src="js/daylight.js"></script>
   <script src="js/tick.js"></script>
   <script src="js/murph.js"></script>
   <script src="js/nav.js"></script>
+  <script type="module" src="js/main.js"></script>
   <script>
     if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === '127.0.0.1' || location.hostname === 'localhost')) {
       navigator.serviceWorker.register('sw.js').catch(function () {});

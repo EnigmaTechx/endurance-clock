@@ -67,12 +67,12 @@
 
   <section>
     <h2>How this page embeds it</h2>
-    <pre>&lt;link rel="stylesheet" href="/3d/css/endurance-clock-3d.css"&gt;
+    <pre>&lt;link rel="stylesheet" href="/css/endurance-clock-3d.css"&gt;
 &lt;script type="importmap"&gt;{ "imports": { "three": "…/three.module.js", "three/addons/": "…/examples/jsm/" } }&lt;/script&gt;
 
 &lt;div class="hero__clock" data-endurance-clock-3d data-transparent data-readout="false"&gt;&lt;/div&gt;
-&lt;script type="module" src="/3d/js/endurance-clock-3d.js"&gt;&lt;/script&gt;</pre>
-    <p>Or mount by hand: <code>import { mount } from '/3d/js/endurance-clock-3d.js'; const clock = mount(el, { transparent: true });</code>
+&lt;script type="module" src="/js/endurance-clock-3d.js"&gt;&lt;/script&gt;</pre>
+    <p>Or mount by hand: <code>import { mount } from '/js/endurance-clock-3d.js'; const clock = mount(el, { transparent: true });</code>
     The widget fills whatever size its container has, pauses when scrolled out of view, and <code>clock.destroy()</code> removes it.</p>
   </section>
 
