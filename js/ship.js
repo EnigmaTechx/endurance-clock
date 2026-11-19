@@ -1,12 +1,15 @@
 /*
- * The Endurance: a ring of twelve modules joined by short corridors, four
- * truss spokes to a central hub, two Landers berthed on the inside of the
- * ring, clock hands pivoting at the hub, and a small craft that orbits
- * the ring once a minute as the second indicator.
+ * The Endurance: twelve modules standing radially around the ring, their
+ * long axes pointing at the hub, joined side to side by corridor tubes;
+ * four thick spokes from the hub to the inner ends of the command
+ * modules; two Landers berthed on the inner ends of landing modules;
+ * clock hands pivoting at the hub; and a small craft that orbits the
+ * ring once a minute as the second indicator.
  *
- * Module roles follow the film's layout: four command modules at the
- * cardinals (where the spokes attach), four engine modules with their
- * bells on the far side, and four landing modules with the big hatches.
+ * Module roles follow the film's layout: command modules at the
+ * cardinals (where the spokes attach), engine modules with their bells
+ * on the far side, landing modules with the big hatches. The Ranger
+ * docks on a module's inner end, as in the film.
  *
  * Ship frame: the ring lies in the XY plane and faces +Z (the camera).
  * Twelve o'clock is +Y; hour i sits at -i * 30 degrees about Z.
@@ -14,20 +17,21 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-export const RING_R = 10;
-export const HUB_R = 1.9;
-export const ORBIT_R = RING_R + 1.9;
-export const HOUR_LEN = 7.3;
-export const MINUTE_LEN = 8.5;
-
-// module dimensions: tangential length, radial height, axial depth
-const MOD_W = 4.55;
-const MOD_H = 1.85;
-const MOD_D = 2.2;
+export const RING_R = 9.4;                 // radius of the module centres
+export const HUB_R = 1.5;
+export const MOD_L = 4.0;                  // radial length
+export const MOD_W = 2.1;                  // tangential width
+export const MOD_D = 2.0;                  // axial depth (towards the camera)
+export const MODULE_INNER_R = RING_R - MOD_L / 2;   // 7.4
+export const MODULE_OUTER_R = RING_R + MOD_L / 2;   // 11.4
+export const ORBIT_R = MODULE_OUTER_R + 1.3;        // second craft's orbit
+export const HOUR_LEN = MODULE_INNER_R - 0.25;
+export const MINUTE_LEN = RING_R - 0.4;
+export const HAND_Z = { hour: 1.3, minute: 1.55, cap: 1.72 };
 
 const COLORS = {
   hull: 0xc3c9d0,        // the Endurance's pale hull
-  hullShade: 0x9ea6b0,   // radiator and recessed panels
+  hullShade: 0x9ea6b0,   // recessed panels
   hullDark: 0x3b414b,    // frames, bands, hatches
   truss: 0x5b6473,
   window: 0x9fd3ff,
@@ -38,6 +42,8 @@ const COLORS = {
 
 const ROLE = (index) => (index % 3 === 0 ? 'command' : index % 2 === 0 ? 'engine' : 'landing');
 const LANDER_MODULES = [5, 11];   // landing modules with a Lander berthed
+const SPOKE_Z = -0.35;            // spokes meet the inner ends a little behind the mid-plane
+const DOCK_Z_OFFSET = 0.55;       // where a spoke or Lander occupies the inner end, the Ranger docks above it
 
 function hullMaterial(color, opts) {
   return new THREE.MeshStandardMaterial(Object.assign({
@@ -84,42 +90,51 @@ function makeMaterials() {
     dark: hullMaterial(COLORS.hullDark, { metalness: 0.6, roughness: 0.5 }),
     truss: hullMaterial(COLORS.truss, { metalness: 0.7, roughness: 0.5 }),
     rim: hullMaterial(0xb9c1cc, { metalness: 0.55, roughness: 0.45 }),
+    corridor: hullMaterial(0xb4bac2, { roughness: 0.6 }),
     engine: hullMaterial(0x2a2f38, { metalness: 0.8, roughness: 0.35, side: THREE.DoubleSide }),
     engineGlow: new THREE.MeshStandardMaterial({ color: 0x101418, emissive: 0x4f7cff, emissiveIntensity: 0.35, roughness: 0.6 })
   };
 }
 
-// ---------- ring structure ----------
+/** Ring-frame position of a point given in module i's local frame (x tangential, y radial). */
+function ringPoint(index, lx, ly, lz) {
+  const a = -THREE.MathUtils.degToRad(index * 30);
+  const x = lx, y = RING_R + ly;
+  return new THREE.Vector3(x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a), lz || 0);
+}
 
-/** Corridors between modules and a slim service rail on the inner side. */
-function buildRingStructure(m) {
+/** A cylinder from a to b. */
+function tube(a, b, radius, material, segments) {
+  const dir = new THREE.Vector3().subVectors(b, a);
+  const len = dir.length();
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, len, segments || 14), material);
+  mesh.position.copy(a).addScaledVector(dir, 0.5);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+  return mesh;
+}
+
+// ---------- corridors ----------
+
+/** Corridor tubes between neighbouring modules' side faces, with couplers at each end. */
+function buildCorridors(m) {
   const g = new THREE.Group();
-  // the connecting corridor runs the whole ring; the modules hide it except in the gaps
-  g.add(new THREE.Mesh(new THREE.TorusGeometry(RING_R, 0.52, 12, 144), m.shade));
-  // corridor collars at each module face
-  const collar = new THREE.TorusGeometry(0.56, 0.06, 8, 24);
+  const coupler = new THREE.TorusGeometry(0.46, 0.07, 8, 24);
   for (let i = 0; i < 12; i++) {
-    for (const side of [-1, 1]) {
-      const deg = i * 30 + side * ((MOD_W / 2 + 0.05) / RING_R) * (180 / Math.PI);
-      const holder = new THREE.Group();
-      holder.rotation.z = -THREE.MathUtils.degToRad(deg);
-      const c = new THREE.Mesh(collar, m.dark);
-      c.position.set(0, RING_R, 0);
-      c.rotation.y = Math.PI / 2;
-      holder.add(c);
-      g.add(holder);
+    const a = ringPoint(i, MOD_W / 2, 0);
+    const b = ringPoint((i + 1) % 12, -MOD_W / 2, 0);
+    g.add(tube(a, b, 0.36, m.corridor));
+    // a slimmer sleeve along the middle and couplers against each hull
+    const dir = new THREE.Vector3().subVectors(b, a).normalize();
+    for (const [p, s] of [[a, 1], [b, -1]]) {
+      const c = new THREE.Mesh(coupler, m.dark);
+      c.position.copy(p).addScaledVector(dir, s * 0.12);
+      c.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir);
+      g.add(c);
     }
-  }
-  // inner service rail and its brackets
-  g.add(new THREE.Mesh(new THREE.TorusGeometry(RING_R - MOD_H / 2 - 0.35, 0.05, 6, 144), m.truss));
-  const bracket = new THREE.BoxGeometry(0.08, 0.4, 0.08);
-  for (let i = 0; i < 24; i++) {
-    const holder = new THREE.Group();
-    holder.rotation.z = -THREE.MathUtils.degToRad(i * 15 + 7.5);
-    const b = new THREE.Mesh(bracket, m.truss);
-    b.position.set(0, RING_R - MOD_H / 2 - 0.17, 0);
-    holder.add(b);
-    g.add(holder);
+    const band = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.05, 8, 24), m.dark);
+    band.position.copy(a).addScaledVector(dir, a.distanceTo(b) / 2);
+    band.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir);
+    g.add(band);
   }
   return g;
 }
@@ -128,32 +143,25 @@ function buildRingStructure(m) {
 
 function buildSpokes(m) {
   const g = new THREE.Group();
-  const inner = HUB_R - 0.2;
-  const outer = RING_R - MOD_H / 2 + 0.05;
+  const inner = HUB_R - 0.1;
+  const outer = MODULE_INNER_R + 0.15;
   const len = outer - inner;
-  const rail = new THREE.CylinderGeometry(0.07, 0.07, len, 6);
-  const rung = new THREE.CylinderGeometry(0.035, 0.035, 0.78, 5);
-
+  const sleeve = new THREE.TorusGeometry(0.4, 0.06, 8, 24);
   for (let i = 0; i < 4; i++) {
     const spoke = new THREE.Group();
     spoke.rotation.z = -THREE.MathUtils.degToRad(i * 90);
-    const core = new THREE.Mesh(new THREE.BoxGeometry(0.42, len, 0.42), m.dark);
-    core.position.y = inner + len / 2;
+    const core = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, len, 18), m.corridor);
+    core.position.set(0, inner + len / 2, SPOKE_Z);
     spoke.add(core);
-    for (const [dx, dz] of [[-0.3, 0.2], [0.3, 0.2], [0, -0.32]]) {
-      const r = new THREE.Mesh(rail, m.truss);
-      r.position.set(dx, inner + len / 2, dz);
-      spoke.add(r);
+    // joints along the spoke, and a root fitting at the module
+    for (let y = inner + 1.2; y < outer - 0.6; y += 1.5) {
+      const s = new THREE.Mesh(sleeve, m.dark);
+      s.position.set(0, y, SPOKE_Z);
+      s.rotation.x = Math.PI / 2;
+      spoke.add(s);
     }
-    for (let y = inner + 0.5; y < outer - 0.3; y += 0.62) {
-      const a = new THREE.Mesh(rung, m.truss);
-      a.position.set(0, y, 0.22);
-      a.rotation.z = Math.PI / 2 + 0.5;
-      spoke.add(a);
-    }
-    // root fitting where the spoke meets the module
-    const foot = new THREE.Mesh(new RoundedBoxGeometry(0.9, 0.5, 0.9, 2, 0.08), m.dark);
-    foot.position.y = outer - 0.2;
+    const foot = new THREE.Mesh(new RoundedBoxGeometry(1.0, 0.5, 1.0, 2, 0.08), m.dark);
+    foot.position.set(0, outer - 0.15, SPOKE_Z);
     spoke.add(foot);
     g.add(spoke);
   }
@@ -165,45 +173,32 @@ function buildHub(m) {
   const hubMat = hullMaterial(0xbfc5cd, { metalness: 0.4, roughness: 0.5 });
   const innerMat = hullMaterial(0x161b25, { metalness: 0.5, roughness: 0.5 });
 
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(HUB_R, HUB_R, 1.3, 48), hubMat);
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(HUB_R, HUB_R, 1.6, 48), hubMat);
   body.rotation.x = Math.PI / 2;
   g.add(body);
-
-  // panel bands around the drum
-  for (const z of [-0.45, 0.45]) {
+  for (const z of [-0.55, 0.55]) {
     const band = new THREE.Mesh(new THREE.TorusGeometry(HUB_R + 0.01, 0.05, 6, 64), m.dark);
     band.position.z = z;
     g.add(band);
   }
-
   const rim = new THREE.Mesh(new THREE.TorusGeometry(HUB_R - 0.05, 0.07, 8, 64), m.rim);
-  rim.position.z = 0.65;
+  rim.position.z = 0.8;
   g.add(rim);
-
-  const inner = new THREE.Mesh(new THREE.CylinderGeometry(HUB_R - 0.55, HUB_R - 0.55, 0.25, 48), innerMat);
+  const inner = new THREE.Mesh(new THREE.CylinderGeometry(HUB_R - 0.45, HUB_R - 0.45, 0.25, 48), innerMat);
   inner.rotation.x = Math.PI / 2;
-  inner.position.z = 0.66;
+  inner.position.z = 0.81;
   g.add(inner);
 
   // the axial docking port the Ranger mates with in the film
-  const port = new THREE.Mesh(new THREE.TorusGeometry(0.78, 0.09, 8, 48), m.rim);
-  port.position.z = 0.8;
+  const port = new THREE.Mesh(new THREE.TorusGeometry(0.66, 0.08, 8, 48), m.rim);
+  port.position.z = 0.95;
   g.add(port);
-  const petal = new THREE.BoxGeometry(0.16, 0.34, 0.12);
+  const petal = new THREE.BoxGeometry(0.14, 0.3, 0.12);
   for (let i = 0; i < 6; i++) {
     const a = (i / 6) * Math.PI * 2;
     const p = new THREE.Mesh(petal, m.dark);
-    p.position.set(Math.cos(a) * 0.78, Math.sin(a) * 0.78, 0.86);
+    p.position.set(Math.cos(a) * 0.66, Math.sin(a) * 0.66, 1.0);
     p.rotation.z = a + Math.PI / 2;
-    g.add(p);
-  }
-  // four smaller ports between the spokes
-  const small = new THREE.CylinderGeometry(0.2, 0.2, 0.22, 16);
-  for (let i = 0; i < 4; i++) {
-    const a = THREE.MathUtils.degToRad(i * 90 + 45);
-    const p = new THREE.Mesh(small, m.dark);
-    p.rotation.x = Math.PI / 2;
-    p.position.set(Math.cos(a) * (HUB_R - 0.32), Math.sin(a) * (HUB_R - 0.32), 0.72);
     g.add(p);
   }
   return g;
@@ -214,11 +209,11 @@ function buildHub(m) {
 function buildModule(index, glowTex, m) {
   const role = ROLE(index);
   const cardinal = role === 'command';
-  const w = MOD_W, h = MOD_H, d = MOD_D;
+  const hasLander = LANDER_MODULES.includes(index);
+  const w = MOD_W, l = MOD_L, d = MOD_D;
 
   const holder = new THREE.Group();
   holder.rotation.z = -THREE.MathUtils.degToRad(index * 30);
-
   const g = new THREE.Group();
   g.position.y = RING_R;
   holder.add(g);
@@ -228,115 +223,116 @@ function buildModule(index, glowTex, m) {
   glow.position.z = 0.4;
   g.add(glow);
 
-  // the chamfered hull
+  // the chamfered hull, long axis radial
   const bodyMat = hullMaterial(COLORS.hull, { emissive: 0x000000 });
-  const body = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 3, 0.2), bodyMat);
+  const body = new THREE.Mesh(new RoundedBoxGeometry(w, l, d, 3, 0.18), bodyMat);
   g.add(body);
 
-  // dark frames near each end, where the corridors join
-  const frame = new RoundedBoxGeometry(0.16, h + 0.06, d + 0.06, 2, 0.05);
-  for (const x of [-w / 2 + 0.55, w / 2 - 0.55]) {
+  // dark frames near each end
+  const frame = new RoundedBoxGeometry(w + 0.06, 0.16, d + 0.06, 2, 0.05);
+  for (const y of [-l / 2 + 0.45, l / 2 - 0.45]) {
     const f = new THREE.Mesh(frame, m.dark);
-    f.position.x = x;
+    f.position.y = y;
     g.add(f);
   }
 
-  // recessed radiator panel on the face towards the camera
-  const radiator = new THREE.Mesh(new RoundedBoxGeometry(w * 0.56, h * 0.42, 0.1, 2, 0.04), m.shade);
-  radiator.position.set(0, -h * 0.12, d / 2 - 0.02);
-  g.add(radiator);
-  const slat = new THREE.BoxGeometry(w * 0.52, 0.03, 0.03);
-  for (let k = -2; k <= 2; k++) {
-    const s = new THREE.Mesh(slat, m.dark);
-    s.position.set(0, -h * 0.12 + k * 0.14, d / 2 + 0.04);
-    g.add(s);
+  // the long recessed panel on the face towards the camera, with a light strip
+  const panel = new THREE.Mesh(new RoundedBoxGeometry(w * 0.64, l * 0.62, 0.1, 2, 0.04), m.dark);
+  panel.position.set(0, -0.1, d / 2 - 0.02);
+  g.add(panel);
+  const strip = new THREE.Mesh(new RoundedBoxGeometry(0.22, l * 0.56, 0.06, 2, 0.03), m.shade);
+  strip.position.set(0, -0.1, d / 2 + 0.03);
+  g.add(strip);
+  // and on the side faces, so the ring reads from any tilt
+  for (const sx of [-1, 1]) {
+    const side = new THREE.Mesh(new RoundedBoxGeometry(0.1, l * 0.55, d * 0.5, 2, 0.03), m.dark);
+    side.position.set(sx * (w / 2 - 0.02), 0, 0);
+    g.add(side);
   }
 
-  // RCS thruster quads at the face corners
+  // windows across the outer end of the face
+  const windowMat = new THREE.MeshStandardMaterial({
+    color: 0x0a1018, emissive: COLORS.window, emissiveIntensity: 0.7, roughness: 0.3, metalness: 0.1
+  });
+  const win = new RoundedBoxGeometry(0.22, 0.2, 0.08, 2, 0.04);
+  const cols = cardinal ? [-0.6, -0.2, 0.2, 0.6] : [-0.4, 0.4];
+  for (const x of cols) {
+    const wm = new THREE.Mesh(win, windowMat);
+    wm.position.set(x, l / 2 - 0.95, d / 2 - 0.02);
+    g.add(wm);
+  }
+
+  // RCS thruster quads at the outer corners
   const quad = new THREE.CylinderGeometry(0.07, 0.09, 0.14, 8);
-  for (const [x, y] of [[-w / 2 + 0.3, h / 2 - 0.2], [w / 2 - 0.3, h / 2 - 0.2]]) {
+  for (const [x, y] of [[-w / 2 + 0.25, l / 2 - 0.25], [w / 2 - 0.25, l / 2 - 0.25]]) {
     const q = new THREE.Mesh(quad, m.dark);
     q.rotation.x = Math.PI / 2;
     q.position.set(x, y, d / 2 + 0.02);
     g.add(q);
   }
 
-  // windows on the face: a row on command modules, pairs elsewhere
-  const windowMat = new THREE.MeshStandardMaterial({
-    color: 0x0a1018, emissive: COLORS.window, emissiveIntensity: 0.7, roughness: 0.3, metalness: 0.1
-  });
-  const win = new RoundedBoxGeometry(0.26, 0.2, 0.08, 2, 0.04);
-  const cols = cardinal ? [-1.4, -0.95, -0.5, 0.5, 0.95, 1.4] : role === 'landing' ? [-1.5, -1.15, 1.15, 1.5] : [-1.5, 1.5];
-  for (const x of cols) {
-    const wm = new THREE.Mesh(win, windowMat);
-    wm.position.set(x, h * 0.3, d / 2 - 0.02);
-    g.add(wm);
-  }
-
   // engine modules carry their bells on the far side
   if (role === 'engine') {
-    const bell = new THREE.CylinderGeometry(0.22, 0.5, 0.9, 20, 1, true);
+    const bell = new THREE.CylinderGeometry(0.22, 0.48, 0.9, 20, 1, true);
     const throat = new THREE.CylinderGeometry(0.2, 0.2, 0.06, 20);
-    for (const x of [-1.15, 0, 1.15]) {
+    for (const y of [-0.9, 0.4]) {
       const b = new THREE.Mesh(bell, m.engine);
       b.rotation.x = -Math.PI / 2;
-      b.position.set(x, -0.1, -d / 2 - 0.4);
+      b.position.set(0, y, -d / 2 - 0.4);
       g.add(b);
       const t = new THREE.Mesh(throat, m.engineGlow);
       t.rotation.x = Math.PI / 2;
-      t.position.set(x, -0.1, -d / 2 - 0.85);
+      t.position.set(0, y, -d / 2 - 0.85);
       g.add(t);
     }
   }
 
-  // inner docking hatch, where the Ranger berths. Command modules carry the
-  // spoke at their centre and the Lander modules carry a Lander, so those
-  // hatches sit to one side.
-  const hasLander = LANDER_MODULES.includes(index);
-  const dockX = cardinal ? 1.3 : hasLander ? 1.25 : 0;
+  // the inner end: docking hatch for the Ranger. Where a spoke or a Lander
+  // meets the end, the hatch sits above it (towards the camera).
+  const dockZ = (cardinal || hasLander) ? DOCK_Z_OFFSET : 0;
   const big = role === 'landing';
-  const hatch = new THREE.Mesh(new THREE.CylinderGeometry(big ? 0.5 : 0.42, big ? 0.54 : 0.46, 0.35, 24), m.dark);
-  hatch.position.set(dockX, -h / 2 - 0.12, 0);
+  const hatch = new THREE.Mesh(new THREE.CylinderGeometry(big ? 0.46 : 0.4, big ? 0.5 : 0.44, 0.3, 24), m.dark);
+  hatch.position.set(0, -l / 2 - 0.1, dockZ);
   g.add(hatch);
-  const collar = new THREE.Mesh(new THREE.TorusGeometry(big ? 0.48 : 0.4, 0.05, 8, 24), m.rim);
+  const collar = new THREE.Mesh(new THREE.TorusGeometry(big ? 0.44 : 0.38, 0.05, 8, 24), m.rim);
   collar.rotation.x = Math.PI / 2;
-  collar.position.set(dockX, -h / 2 - 0.3, 0);
+  collar.position.set(0, -l / 2 - 0.26, dockZ);
   g.add(collar);
 
-  if (hasLander) g.add(buildLander(-1.15, -h / 2, m));
+  if (hasLander) g.add(buildLander(-l / 2, m));
 
   return {
     holder, body, bodyMat, windowMat, glow, cardinal, role,
-    // where a Ranger's docking collar meets the hatch, in ring polar terms
-    dock: { radius: RING_R - h / 2 - 0.3 - 0.31, tangent: dockX }
+    // where the Ranger's docking collar meets the hatch, in ring polar terms
+    dock: { radius: RING_R - l / 2 - 0.26 - 0.31, tangent: 0, z: dockZ }
   };
 }
 
-/** A Lander berthed under a landing module: boxy, with its hatch up against the hull. */
-function buildLander(x, innerFaceY, m) {
+/** A Lander berthed on a module's inner end, behind the Ranger's hatch. */
+function buildLander(innerFaceY, m) {
   const g = new THREE.Group();
-  const bodyW = 1.9, bodyH = 1.0, bodyD = 1.3;
+  const bodyW = 1.6, bodyH = 1.0, bodyD = 1.2;
   const body = new THREE.Mesh(new RoundedBoxGeometry(bodyW, bodyH, bodyD, 2, 0.14), hullMaterial(0xc4c9cf));
   g.add(body);
   const belly = new THREE.Mesh(new RoundedBoxGeometry(bodyW * 0.9, 0.3, bodyD * 0.9, 2, 0.08), m.dark);
   belly.position.y = -bodyH / 2 + 0.05;
   g.add(belly);
-  const cockpit = new THREE.Mesh(new RoundedBoxGeometry(0.6, 0.18, bodyD * 0.7, 2, 0.05), new THREE.MeshStandardMaterial({
+  const cockpit = new THREE.Mesh(new RoundedBoxGeometry(0.55, 0.18, bodyD * 0.7, 2, 0.05), new THREE.MeshStandardMaterial({
     color: 0x1b2430, metalness: 0.2, roughness: 0.2, emissive: COLORS.window, emissiveIntensity: 0.3
   }));
-  cockpit.position.set(bodyW / 2 - 0.45, 0.12, bodyD / 2 - 0.3);
+  cockpit.position.set(bodyW / 2 - 0.4, 0.12, bodyD / 2 - 0.25);
   g.add(cockpit);
-  const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.22, 20), m.dark);
+  const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.22, 20), m.dark);
   collar.position.y = bodyH / 2 + 0.1;
   g.add(collar);
-  const leg = new THREE.CylinderGeometry(0.04, 0.04, 0.7, 6);
-  for (const [lx, lz] of [[-0.7, -0.45], [0.7, -0.45], [-0.7, 0.45], [0.7, 0.45]]) {
+  const leg = new THREE.CylinderGeometry(0.04, 0.04, 0.6, 6);
+  for (const [lx, lz] of [[-0.6, -0.4], [0.6, -0.4], [-0.6, 0.4], [0.6, 0.4]]) {
     const l = new THREE.Mesh(leg, m.truss);
-    l.position.set(lx, -bodyH / 2 - 0.15, lz);
+    l.position.set(lx, -bodyH / 2 - 0.12, lz);
     l.rotation.z = lx > 0 ? -0.5 : 0.5;
     g.add(l);
   }
-  g.position.set(x, innerFaceY - 0.21 - bodyH / 2, 0);
+  g.position.set(0, innerFaceY - 0.21 - bodyH / 2, -0.4);
   return g;
 }
 
@@ -432,7 +428,7 @@ export function buildShip() {
   const glowTex = glowTexture();
   const m = makeMaterials();
 
-  group.add(buildRingStructure(m));
+  group.add(buildCorridors(m));
   group.add(buildSpokes(m));
 
   const modules = [];
@@ -444,8 +440,8 @@ export function buildShip() {
 
   group.add(buildHub(m));
 
-  const hour = buildHand(HOUR_LEN, 0.27, 0.9, 0.2, 1.0, glowTex);
-  const minute = buildHand(MINUTE_LEN, 0.16, 1.05, 0.14, 1.26, glowTex);
+  const hour = buildHand(HOUR_LEN, 0.27, 0.9, 0.2, HAND_Z.hour, glowTex);
+  const minute = buildHand(MINUTE_LEN, 0.16, 1.05, 0.14, HAND_Z.minute, glowTex);
   group.add(hour);
   group.add(minute);
 
@@ -454,7 +450,7 @@ export function buildShip() {
     hullMaterial(0x161b25, { metalness: 0.7, roughness: 0.35 })
   );
   cap.rotation.x = Math.PI / 2;
-  cap.position.z = 1.4;
+  cap.position.z = HAND_Z.cap;
   group.add(cap);
 
   const orbit = new THREE.Mesh(
