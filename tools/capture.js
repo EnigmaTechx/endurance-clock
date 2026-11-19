@@ -6,8 +6,10 @@
  *   npx playwright install chromium
  *   node tools/capture.js
  *
- * Set THREE_LOCAL=/path/to/node_modules/three to serve Three.js from disk
- * instead of the CDN (handy on a machine without internet access).
+ * Set THREE_LOCAL=/path/to/node_modules/three to serve Three.js (and the Draco
+ * decoder) from disk instead of the CDN (handy on a machine without internet
+ * access). Service workers are blocked in the capture contexts so the page's
+ * worker cannot intercept those stubbed requests.
  */
 const { chromium } = require('playwright');
 const http = require('http');
@@ -50,7 +52,7 @@ async function routeThree(page) {
 
   // ---- Open Graph: the 3D ship, 1200x630 ----
   {
-    const ctx = await browser.newContext({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 });
+    const ctx = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 });
     const page = await ctx.newPage();
     await routeThree(page);
     await page.clock.setFixedTime(FIXED_TIME);
@@ -71,7 +73,7 @@ async function routeThree(page) {
 
   // ---- Icons: the ring on space, square, tightly framed ----
   async function icon(size, fit, file) {
-    const ctx = await browser.newContext({ viewport: { width: size, height: size }, deviceScaleFactor: 1 });
+    const ctx = await browser.newContext({ serviceWorkers: 'block', viewport: { width: size, height: size }, deviceScaleFactor: 1 });
     const page = await ctx.newPage();
     await routeThree(page);
     await page.clock.setFixedTime(FIXED_TIME);
