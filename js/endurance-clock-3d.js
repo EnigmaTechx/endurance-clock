@@ -664,6 +664,7 @@ export function mount(container, options) {
     isMurph: () => murph.on,
     hasModel: () => modelLoaded,
     startTour: () => { if (tour) { lastInput = performance.now(); tour.start(0); } },
+    seekTour: (shot, u) => { if (tour) { lastInput = performance.now(); tour.seek(shot, u); } },
     stopTour: () => { if (tour) { lastInput = performance.now(); tour.stop(); } },
     isTouring: () => !!(tour && tour.isActive()),
     pause() { paused = true; stop(); },

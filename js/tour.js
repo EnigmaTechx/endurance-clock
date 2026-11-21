@@ -38,9 +38,10 @@ export function createTour(ctx) {
     { // 1. dolly around the tilted ring
       duration: 36,
       pose(u, out) {
+        // far enough that the whole ring stays in frame from a steep tilt
         const a = THREE.MathUtils.degToRad(-60 + u * 130);
-        const r = lerp(23, 20, smooth(u));
-        const z = lerp(12, 8, smooth(u));
+        const r = lerp(46, 40, smooth(u));
+        const z = lerp(28, 20, smooth(u));
         out.position.set(Math.cos(a) * r, Math.sin(a) * r, z);
         out.target.set(0, 0, 0.5);
       }
@@ -49,9 +50,9 @@ export function createTour(ctx) {
       duration: 20,
       pose(u, out) {
         const base = activeAngle();
-        const a = base + THREE.MathUtils.degToRad(lerp(28, -28, u));
-        const r = ship.dims.outerR + 5;
-        const z = ship.dims.topZ + lerp(5, 3.5, u);
+        const a = base + THREE.MathUtils.degToRad(lerp(24, -24, u));
+        const r = ship.dims.outerR + 17;
+        const z = ship.dims.topZ + lerp(11, 8, u);
         out.position.set(Math.cos(a) * r, Math.sin(a) * r, z);
         const mid = (ship.dims.innerR + ship.dims.outerR) / 2;
         out.target.set(Math.cos(base) * mid, Math.sin(base) * mid, 0);
@@ -63,21 +64,22 @@ export function createTour(ctx) {
         if (ctx.gargantua) ctx.gargantua.group.getWorldPosition(_g); else _g.set(30, 11, -84);
         ship.group.worldToLocal(_g);
         _dir.set(_g.x, _g.y, 0).normalize();
-        // stand on the far side of the ring, low, and drift sideways
+        // stand on the far side of the ring, high enough to see over the near rim,
+        // and drift sideways; Gargantua sits above the far rim
         const side = new THREE.Vector3(-_dir.y, _dir.x, 0);
-        const r = ship.dims.outerR + 6;
-        out.position.copy(_dir).multiplyScalar(-r).addScaledVector(side, lerp(-6, 6, u));
-        out.position.z = lerp(2.5, 4, u);
-        out.target.copy(_g).multiplyScalar(0.35);     // between the ring and Gargantua, so both read
-        out.target.z = lerp(-2, 1, u);
+        const r = ship.dims.outerR + 10;
+        out.position.copy(_dir).multiplyScalar(-r).addScaledVector(side, lerp(-9, 9, u));
+        out.position.z = lerp(15, 12, u);
+        out.target.copy(_g).multiplyScalar(0.4);      // between the ring and Gargantua, so both read
+        out.target.z = lerp(-26, -20, u);
       }
     },
     { // 4. low over the hub and its docking port
       duration: 16,
       pose(u, out) {
         const a = THREE.MathUtils.degToRad(-110 + u * 70);
-        const r = 7.5;
-        out.position.set(Math.cos(a) * r, Math.sin(a) * r, ship.dims.topZ + lerp(4.5, 3, u));
+        const r = 15;
+        out.position.set(Math.cos(a) * r, Math.sin(a) * r, ship.dims.topZ + lerp(11, 8, u));
         out.target.set(0, 0, 0.8);
       }
     },
@@ -169,10 +171,23 @@ export function createTour(ctx) {
     return true;
   }
 
+  /** Jump straight to a shot at progress u (0..1), no blend; for previews and tests. */
+  function seek(shot, u) {
+    if (!state.active) start(shot);
+    state.returning = false;
+    state.shot = shot % shots.length;
+    state.time = THREE.MathUtils.clamp(u, 0, 1) * shots[state.shot].duration;
+    shots[state.shot].pose(THREE.MathUtils.clamp(u, 0, 1), state.tmp);
+    state.from.position.copy(state.tmp.position);
+    state.from.target.copy(state.tmp.target);
+    apply(state.tmp);
+  }
+
   return {
-    start, stop, update,
+    start, stop, update, seek,
     isActive: () => state.active && !state.returning,
     ownsCamera: () => state.active,
-    shotIndex: () => state.shot
+    shotIndex: () => state.shot,
+    shotCount: shots.length
   };
 }
