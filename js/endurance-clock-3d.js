@@ -30,6 +30,7 @@ import { createReadout } from './readout.js';
 import { buildRanger, dockTimeline } from './ranger.js';
 import { FACTOR, rateAt, dilatedElapsed, splitElapsed } from './miller.js';
 import { createAlarm } from './alarm.js';
+import { createTour } from './tour.js';
 
 const SKY_PERIOD = 600;              // seconds per revolution of the sky (ship spin, slowed)
 const FRAME_HALF_EXTENT = ORBIT_R + 1.6;
@@ -52,6 +53,7 @@ const DEFAULTS = {
   overlays: null,         // { top: Element, bottom: Element } to keep the ring clear of
   alarmControls: null,    // panel elements for the alarm (see alarm.js); API works without
   fallback: null,         // element to reveal if WebGL is unavailable
+  idleTour: false,        // false, true (45 s idle) or a number of seconds before the camera tours the ship
   model: true,            // load the Endurance model (true, a URL, or false for the procedural ship)
   decoderPath: 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/libs/draco/',
   onModel: null,          // () => void, when the model has replaced the procedural hull
@@ -293,10 +295,16 @@ export function mount(container, options) {
     const unitsPerPx = (2 * dist * tanHalf) / h;
     const targetY = -((bottom - top) / 2) * unitsPerPx;
     const pitch = THREE.MathUtils.degToRad(opts.pitch);
-    camera.position.set(0, targetY + Math.sin(pitch) * dist, Math.cos(pitch) * dist);
-    camera.lookAt(0, targetY, 0);
+    home.position.set(0, targetY + Math.sin(pitch) * dist, Math.cos(pitch) * dist);
+    home.target.set(0, targetY, 0);
     camera.updateProjectionMatrix();
+    if (tour && tour.ownsCamera()) return;   // the tour has the camera; it eases back to this pose when it ends
+    camera.position.copy(home.position);
+    camera.lookAt(home.target);
   }
+
+  const home = { position: new THREE.Vector3(), target: new THREE.Vector3() };
+  let tour = null;
 
   function resize() {
     const pr = pixelRatio();
@@ -481,6 +489,30 @@ export function mount(container, options) {
     return { hourDeg: hourF * 30, minuteDeg: minF * 6, secondDeg: secF * 6, activeModule: h % 12 };
   }
 
+  // ---------- idle tour ----------
+
+  const tourDelay = opts.idleTour === true ? 45 : (typeof opts.idleTour === 'number' ? opts.idleTour : 0);
+  let lastInput = performance.now();
+  let tourInputs = null;
+  if (tourDelay > 0 && !reduceMotion) {
+    tour = createTour({
+      camera, ship, gargantua, sky,
+      getHome: () => home,
+      onChange: (touring) => {
+        container.classList.toggle('ec3d--touring', touring);
+        if (opts.onTourChange) opts.onTourChange(touring);
+      }
+    });
+    const onInput = () => {
+      lastInput = performance.now();
+      if (tour.isActive()) tour.stop();
+    };
+    for (const ev of ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart']) {
+      window.addEventListener(ev, onInput, { passive: true });
+    }
+    tourInputs = onInput;
+  }
+
   // ---------- loop ----------
 
   const threeClock = new THREE.Clock();
@@ -531,12 +563,20 @@ export function mount(container, options) {
       sky.rotation.z = skyAngle;
     }
 
+    // the idle tour takes the camera after a quiet spell; the rig settles level meanwhile
+    let touring = false;
+    if (tour) {
+      if (!tour.ownsCamera() && visible && !document.hidden && (performance.now() - lastInput) / 1000 > tourDelay) tour.start(0);
+      touring = tour.update(dt);
+    }
     const idle = (reduceMotion || !opts.sway) ? 0 : THREE.MathUtils.smoothstep((performance.now() - tilt.idleSince) / 1000, 2.5, 7);
     const swayX = Math.sin(t * 0.21) * 0.05 * idle;
     const swayY = Math.cos(t * 0.17) * 0.07 * idle;
     const k = 1 - Math.pow(0.001, dt);
-    tilt.x += ((tilt.tx * (1 - idle) + swayX) - tilt.x) * k;
-    tilt.y += ((tilt.ty * (1 - idle) + swayY) - tilt.y) * k;
+    const wantX = touring ? 0 : tilt.tx * (1 - idle) + swayX;
+    const wantY = touring ? 0 : tilt.ty * (1 - idle) + swayY;
+    tilt.x += (wantX - tilt.x) * k;
+    tilt.y += (wantY - tilt.y) * k;
     rig.rotation.x = tilt.x;
     rig.rotation.y = tilt.y;
 
@@ -592,7 +632,10 @@ export function mount(container, options) {
       }, { threshold: 0.01 })
     : null;
   if (intersection) intersection.observe(container);
-  const onVisibility = () => { if (document.hidden) stop(); else start(); };
+  const onVisibility = () => {
+    if (document.hidden) { stop(); if (tour && tour.isActive()) tour.stop(); }
+    else { lastInput = performance.now(); start(); }
+  };
   document.addEventListener('visibilitychange', onVisibility);
   const onFonts = () => frameCamera();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(onFonts);
@@ -620,6 +663,10 @@ export function mount(container, options) {
     setMurph,
     isMurph: () => murph.on,
     hasModel: () => modelLoaded,
+    startTour: () => { if (tour) { lastInput = performance.now(); tour.start(0); } },
+    seekTour: (shot, u) => { if (tour) { lastInput = performance.now(); tour.seek(shot, u); } },
+    stopTour: () => { if (tour) { lastInput = performance.now(); tour.stop(); } },
+    isTouring: () => !!(tour && tour.isActive()),
     pause() { paused = true; stop(); },
     resume() { paused = false; start(); },
     isRunning: () => running,
@@ -636,6 +683,7 @@ export function mount(container, options) {
       canvas.removeEventListener('pointercancel', endDrag);
       canvas.removeEventListener('pointerleave', onPointerLeave);
       canvas.removeEventListener('webglcontextlost', onContextLost);
+      if (tourInputs) for (const ev of ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart']) window.removeEventListener(ev, tourInputs);
       if (alarm.destroy) alarm.destroy();
       scene.traverse((o) => {
         if (o.geometry) o.geometry.dispose();
@@ -646,7 +694,7 @@ export function mount(container, options) {
       renderer.dispose();
       canvas.remove();
       if (overlay) overlay.remove();
-      container.classList.remove('ec3d', 'ec3d--transparent', 'ec3d--model', 'clock3d--miller');
+      container.classList.remove('ec3d', 'ec3d--transparent', 'ec3d--model', 'ec3d--touring', 'clock3d--miller');
       container.removeAttribute('role');
       container.removeAttribute('aria-label');
       delete container.__enduranceClock3D;

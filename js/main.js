@@ -56,6 +56,8 @@ try {
   clock = mount(document.getElementById('clock'), {
     quality: params.get('quality') || 'auto',
     model: params.get('ship') !== 'procedural',
+    idleTour: params.get('tour') === '0' ? false : (params.has('tourDelay') ? Number(params.get('tourDelay')) : true),
+    onTourChange(touring) { document.body.classList.toggle('is-touring', touring); },
     hour12: params.has('hour12') ? params.get('hour12') === 'true' : undefined,
     locale: params.get('locale') || undefined,
     timeOffset,
@@ -94,6 +96,7 @@ millerToggle.addEventListener('click', () => clock.setMiller(!clock.isMiller()))
 murphToggle.addEventListener('click', () => clock.setMurph(!clock.isMurph()));
 if (params.get('mode') === 'miller') clock.setMiller(true);
 if (params.get('murph') === '1') clock.setMurph(true);
+if (params.get('tour') === '1') clock.startTour();
 
 // handle for poking at the scene from devtools
 window.__endurance = clock;
