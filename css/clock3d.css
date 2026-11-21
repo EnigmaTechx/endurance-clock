@@ -112,6 +112,24 @@ body {
 
 .panel__check input { accent-color: var(--accent); }
 
+/* ---- idle tour: the chrome steps out of the frame ---- */
+
+.site-nav,
+.panel {
+  transition: opacity 1.2s ease;
+}
+
+body.is-touring .site-nav,
+body.is-touring .panel {
+  opacity: 0;
+  pointer-events: none;
+}
+
+body.is-touring .ec3d__overlay {
+  transition: opacity 1.2s ease;
+  opacity: 0.85;
+}
+
 /* ---- WebGL fallback ---- */
 
 .fallback {

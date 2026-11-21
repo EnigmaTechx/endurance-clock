@@ -143,7 +143,8 @@ clock.pause(); clock.resume();
 clock.destroy();
 ```
 
-Options: `model` (`true` for the bundled Endurance model, a URL, or `false` for the
+Options: `idleTour` (`false`, `true` for 45 s, or seconds), `onTourChange`, `model`
+(`true` for the bundled Endurance model, a URL, or `false` for the
 procedural ship), `decoderPath` (Draco decoder location), `onModel`, `transparent`
 (alpha canvas so the page shows through; bloom is off in this mode), `readout`,
 `gargantua`, `stars`, `quality` (`auto` | `low` | `high`),
@@ -185,6 +186,18 @@ readout. `?demo=dock` shifts the clock so the hour turns a few seconds after
 load, to watch the Ranger dock without waiting. Without WebGL the page shows a short note instead.
 
 Three.js is pinned to `0.170.0` in the import map in `index.html`.
+
+### Idle tour
+
+Leave the page alone for 45 seconds and the camera leaves its post for a slow
+loop of shots: a dolly around the tilted ring, a close pass on the lit module, a
+turn to frame Gargantua beyond the ring's edge, a low pass over the hub and its
+docking port, then a glide home before it repeats. The nav fades out meanwhile
+and the clock keeps running. Any touch, key or pointer movement eases the camera
+back and restarts the timer. `?tour=1` starts it at once, `?tour=0` turns it off,
+`?tourDelay=10` shortens the wait; reduced motion disables it. In the widget it is
+the `idleTour` option (off by default) with `startTour()` / `stopTour()` /
+`isTouring()` and an `onTourChange` callback. `js/tour.js` holds the shots.
 
 ### Time-of-day lighting
 
