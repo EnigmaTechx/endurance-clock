@@ -34,6 +34,86 @@
 
 .ec3d__canvas--interactive:active { cursor: grabbing; }
 
+.ec3d__canvas--hover { cursor: pointer; }
+
+/* ---- lore card ---- */
+
+.ec3d__lore {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  width: min(290px, calc(100% - 24px));
+  padding: 12px 14px 12px;
+  border: 1px solid rgba(255, 178, 92, 0.32);
+  border-radius: 10px;
+  background: rgba(8, 11, 18, 0.92);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  color: var(--text);
+  font-family: var(--font);
+  letter-spacing: 0.04em;
+  pointer-events: auto;
+  transition: opacity 0.25s ease;
+  will-change: transform;
+}
+
+.ec3d__lore[hidden] { display: none; }
+
+.ec3d__lore::before {
+  /* pointer towards the subject */
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -7px;
+  width: 12px;
+  height: 12px;
+  transform: translateY(-50%) rotate(45deg);
+  border-left: 1px solid rgba(255, 178, 92, 0.32);
+  border-bottom: 1px solid rgba(255, 178, 92, 0.32);
+  background: rgba(8, 11, 18, 0.92);
+}
+
+.ec3d__lore.is-left::before {
+  left: auto;
+  right: -7px;
+  border-left: 0;
+  border-bottom: 0;
+  border-right: 1px solid rgba(255, 178, 92, 0.32);
+  border-top: 1px solid rgba(255, 178, 92, 0.32);
+}
+
+.ec3d__lore-kind {
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.ec3d__lore-name {
+  margin-top: 2px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #fff1dc;
+}
+
+.ec3d__lore-hour {
+  margin-top: 2px;
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.ec3d__lore-hour[hidden] { display: none; }
+
+.ec3d__lore-text {
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+
 .ec3d__overlay {
   position: absolute;
   inset: 0;

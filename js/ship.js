@@ -732,5 +732,9 @@ export function buildShip() {
 
   const docks = modules.map((mod) => mod.dock);
 
-  return { group, modules, docks, dims, hour, minute, craft, trail, glowTex, setActive, setPulses, setTrailBoost, setCraftFlare, setModel, updateModules, setAngles };
+  /** The hub object for picking: the model's core group, or the procedural hub. */
+  function getHub() { return modelCore || procedural.hub; }
+  function activeIndex() { return state.active; }
+
+  return { group, modules, docks, dims, hour, minute, craft, trail, glowTex, getHub, activeIndex, setActive, setPulses, setTrailBoost, setCraftFlare, setModel, updateModules, setAngles };
 }
