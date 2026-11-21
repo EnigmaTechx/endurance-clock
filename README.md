@@ -143,7 +143,8 @@ clock.pause(); clock.resume();
 clock.destroy();
 ```
 
-Options: `idleTour` (`false`, `true` for 45 s, or seconds), `onTourChange`, `model`
+Options: `lore` (cards on tap), `onLoreOpen` / `onLoreClose`, `idleTour` (`false`,
+`true` for 45 s, or seconds), `onTourChange`, `model`
 (`true` for the bundled Endurance model, a URL, or `false` for the
 procedural ship), `decoderPath` (Draco decoder location), `onModel`, `transparent`
 (alpha canvas so the page shows through; bloom is off in this mode), `readout`,
@@ -186,6 +187,18 @@ readout. `?demo=dock` shifts the clock so the hour turns a few seconds after
 load, to watch the Ranger dock without waiting. Without WebGL the page shows a short note instead.
 
 Three.js is pinned to `0.170.0` in the import map in `index.html`.
+
+### Module lore on tap
+
+Tap or click a module and a card appears beside it with its name, the hour it
+marks and a line or two about its role on the ship: the four permanent modules at
+the spokes (bridge, medical and labs, habitation and cryo, stores), the four
+engine modules, and the four landing modules with the Rangers and Landers. The hub
+and the Ranger have cards too. Hovering a module lifts it a little; Escape or a tap
+elsewhere closes the card; with a card open the arrow keys step round the ring.
+`js/lore.js` holds the text. The names of the permanent modules are this clock's
+reading of the film's layout rather than canon. Widget option `lore` (on by
+default, needs `interactive`), with `onLoreOpen` / `onLoreClose`.
 
 ### Idle tour
 

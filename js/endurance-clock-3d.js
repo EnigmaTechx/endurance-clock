@@ -31,6 +31,7 @@ import { buildRanger, dockTimeline } from './ranger.js';
 import { FACTOR, rateAt, dilatedElapsed, splitElapsed } from './miller.js';
 import { createAlarm } from './alarm.js';
 import { createTour } from './tour.js';
+import { createLore } from './lore.js';
 
 const SKY_PERIOD = 600;              // seconds per revolution of the sky (ship spin, slowed)
 const FRAME_HALF_EXTENT = ORBIT_R + 1.6;
@@ -53,6 +54,7 @@ const DEFAULTS = {
   overlays: null,         // { top: Element, bottom: Element } to keep the ring clear of
   alarmControls: null,    // panel elements for the alarm (see alarm.js); API works without
   fallback: null,         // element to reveal if WebGL is unavailable
+  lore: true,             // tap a module, the hub or the Ranger for a card about it (needs interactive)
   idleTour: false,        // false, true (45 s idle) or a number of seconds before the camera tours the ship
   model: true,            // load the Endurance model (true, a URL, or false for the procedural ship)
   decoderPath: 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/libs/draco/',
@@ -380,6 +382,13 @@ export function mount(container, options) {
     els: opts.alarmControls || null
   });
 
+  // ---------- lore on tap ----------
+
+  const lore = (opts.lore && opts.interactive)
+    ? createLore({ container, canvas, camera, ship, ranger, overlay, onOpen: opts.onLoreOpen, onClose: opts.onLoreClose })
+    : null;
+  const pulseBuffer = new Float32Array(12);
+
   // ---------- Miller's planet ----------
 
   const miller = { on: false, t0: 0 };
@@ -540,7 +549,18 @@ export function mount(container, options) {
     }
     ship.setAngles(angles.hourDeg, angles.minuteDeg, angles.secondDeg);
     ship.setActive(angles.activeModule);
-    ship.setPulses(alarm.update(real, t));
+    const pulses = alarm.update(real, t);
+    if (lore) {
+      // a hovered or open module lifts a little above the alarm's pulses
+      pulseBuffer.set(pulses);
+      const lift = (i, v) => { if (i >= 0 && i < 12) pulseBuffer[i] = Math.max(pulseBuffer[i], v); };
+      lift(lore.hoverIndex(), 0.22);
+      const cur = lore.current();
+      if (cur && cur.type === 'module') lift(cur.index, 0.35);
+      ship.setPulses(pulseBuffer);
+    } else {
+      ship.setPulses(pulses);
+    }
     ship.updateModules(dt, first || reduceMotion);
 
     if (miller.on) {
@@ -592,6 +612,7 @@ export function mount(container, options) {
     if (stars) stars.update(t, pixelRatio(), daylightPalette ? daylightPalette.stars : undefined);
 
     if (first) frameCamera();   // the readout now has text, so its height is known
+    if (lore) lore.update();
 
     if (composer) composer.render();
     else renderer.render(scene, camera);
@@ -663,6 +684,7 @@ export function mount(container, options) {
     setMurph,
     isMurph: () => murph.on,
     hasModel: () => modelLoaded,
+    lore,
     startTour: () => { if (tour) { lastInput = performance.now(); tour.start(0); } },
     seekTour: (shot, u) => { if (tour) { lastInput = performance.now(); tour.seek(shot, u); } },
     stopTour: () => { if (tour) { lastInput = performance.now(); tour.stop(); } },
@@ -685,6 +707,7 @@ export function mount(container, options) {
       canvas.removeEventListener('webglcontextlost', onContextLost);
       if (tourInputs) for (const ev of ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart']) window.removeEventListener(ev, tourInputs);
       if (alarm.destroy) alarm.destroy();
+      if (lore) lore.destroy();
       scene.traverse((o) => {
         if (o.geometry) o.geometry.dispose();
         const mats = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
@@ -694,7 +717,7 @@ export function mount(container, options) {
       renderer.dispose();
       canvas.remove();
       if (overlay) overlay.remove();
-      container.classList.remove('ec3d', 'ec3d--transparent', 'ec3d--model', 'ec3d--touring', 'clock3d--miller');
+      container.classList.remove('ec3d', 'ec3d--transparent', 'ec3d--model', 'ec3d--touring', 'ec3d--lore-open', 'clock3d--miller');
       container.removeAttribute('role');
       container.removeAttribute('aria-label');
       delete container.__enduranceClock3D;
