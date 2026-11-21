@@ -188,6 +188,16 @@ load, to watch the Ranger dock without waiting. Without WebGL the page shows a s
 
 Three.js is pinned to `0.170.0` in the import map in `index.html`.
 
+### Keyboard shortcuts and help
+
+Single letters, no modifiers: **M** Miller's planet, **W** Murph's watch, **A** the
+alarm panel, **T** tick, **L** the current hour's module card (then **←** **→**
+step round the ring), **C** start or stop the camera tour, **R** reset the view,
+**F** fullscreen, **?** or **H** the help overlay, **Esc** closes anything. Keys
+are ignored while typing in the alarm fields. The help overlay (also under
+**Help** in the nav) lists the keys and the pointer gestures and carries the model
+credit. `js/shortcuts.js`.
+
 ### Module lore on tap
 
 Tap or click a module and a card appears beside it with its name, the hour it
