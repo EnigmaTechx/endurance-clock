@@ -503,6 +503,7 @@ export function mount(container, options) {
   const tourDelay = opts.idleTour === true ? 45 : (typeof opts.idleTour === 'number' ? opts.idleTour : 0);
   let lastInput = performance.now();
   let tourInputs = null;
+  let tourGraceUntil = 0;     // the key or tap that starts a tour must not also end it
   if (tourDelay > 0 && !reduceMotion) {
     tour = createTour({
       camera, ship, gargantua, sky,
@@ -514,6 +515,7 @@ export function mount(container, options) {
     });
     const onInput = () => {
       lastInput = performance.now();
+      if (performance.now() < tourGraceUntil) return;
       if (tour.isActive()) tour.stop();
     };
     for (const ev of ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart']) {
@@ -685,7 +687,7 @@ export function mount(container, options) {
     isMurph: () => murph.on,
     hasModel: () => modelLoaded,
     lore,
-    startTour: () => { if (tour) { lastInput = performance.now(); tour.start(0); } },
+    startTour: () => { if (tour) { lastInput = performance.now(); tourGraceUntil = performance.now() + 400; tour.start(0); } },
     seekTour: (shot, u) => { if (tour) { lastInput = performance.now(); tour.seek(shot, u); } },
     stopTour: () => { if (tour) { lastInput = performance.now(); tour.stop(); } },
     isTouring: () => !!(tour && tour.isActive()),

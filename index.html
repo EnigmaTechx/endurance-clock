@@ -56,6 +56,8 @@
                 title="Murph's watch: the second hand ticks STAY in Morse">Murph</button>
         <button type="button" id="tick-toggle" class="site-nav__mode" aria-pressed="false"
                 title="A quiet tick on every second (once per Earth day on Miller's planet)">Tick</button>
+        <button type="button" id="help-toggle" class="site-nav__mode" aria-expanded="false" aria-controls="help"
+                title="Keys and gestures (?)">Help</button>
       </span>
     </span>
   </nav>
@@ -87,6 +89,36 @@
 
   <div id="clock" class="ec3d--page"></div>
 
+  <div id="help" class="help" hidden role="dialog" aria-modal="true" aria-labelledby="help-title">
+    <div class="help__card">
+      <div class="help__head">
+        <h2 id="help-title" class="help__title">Keys &amp; gestures</h2>
+        <button type="button" class="help__close" data-close aria-label="Close help">&times;</button>
+      </div>
+      <div class="help__cols">
+        <dl class="help__list">
+          <dt><kbd>M</kbd></dt><dd>Miller’s planet: one hour here, seven years there</dd>
+          <dt><kbd>W</kbd></dt><dd>Murph’s watch: the second hand ticks STAY in Morse</dd>
+          <dt><kbd>A</kbd></dt><dd>Alarm and countdown panel</dd>
+          <dt><kbd>T</kbd></dt><dd>Tick sound on or off</dd>
+          <dt><kbd>L</kbd></dt><dd>About the current hour’s module; <kbd>←</kbd> <kbd>→</kbd> step round the ring</dd>
+          <dt><kbd>C</kbd></dt><dd>Start or stop the camera tour</dd>
+          <dt><kbd>R</kbd></dt><dd>Reset the view</dd>
+          <dt><kbd>F</kbd></dt><dd>Fullscreen</dd>
+          <dt><kbd>?</kbd></dt><dd>This help; <kbd>Esc</kbd> closes anything</dd>
+        </dl>
+        <dl class="help__list">
+          <dt>Drag</dt><dd>Tilt the ship; move the mouse to lean it</dd>
+          <dt>Tap</dt><dd>A module, the hub or the Ranger for its story</dd>
+          <dt>Wait</dt><dd>Leave it alone and the camera takes a tour of the ship</dd>
+          <dt>On the hour</dt><dd>The Ranger undocks and flies to the next module</dd>
+          <dt>Menu</dt><dd>On phones the modes sit under <em>Menu</em></dd>
+        </dl>
+      </div>
+      <p class="help__foot">Ship model: <a href="https://skfb.ly/p6vzT" target="_blank" rel="noreferrer license">“Interstellar | Endurance” by devPilot, CC BY 4.0</a>. Source on <a href="https://github.com/EnigmaTechx/endurance-clock" target="_blank" rel="noreferrer">GitHub</a>.</p>
+    </div>
+  </div>
+
   <div id="fallback" class="fallback" hidden>
     <p>The Endurance clock needs WebGL, which this browser has turned off or doesn't support.</p>
     <p><a href="https://github.com/EnigmaTechx/endurance-clock">About the project</a></p>
@@ -96,6 +128,7 @@
   <script src="js/tick.js"></script>
   <script src="js/murph.js"></script>
   <script src="js/nav.js"></script>
+  <script src="js/shortcuts.js"></script>
   <script type="module" src="js/main.js"></script>
   <script>
     if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === '127.0.0.1' || location.hostname === 'localhost')) {
