@@ -255,6 +255,25 @@ remembered-on tick begins at your first tap or key press. In Miller's planet mod
 it becomes a deeper, slower tick once per Earth day of dilated time, every 1.4 s at
 the film's ratio, a nod to the score.
 
+## Tests
+
+A Playwright suite in `tests/` covers rendering and framing at several sizes,
+the hour rollover, docking on the hour, Miller's planet, Murph's watch, the tick's
+scheduling, alarm and countdown (including a reload), lore cards, shortcuts, the
+phone menu, the idle tour and the embed page. It runs in Chromium with software
+WebGL so it needs no GPU, which makes it slow but portable; GitHub Actions runs it
+on every pull request and push to `main` (`.github/workflows/tests.yml`).
+
+```bash
+npm install
+npx playwright install chromium
+npm test
+```
+
+`tools/serve.js` serves the site for the tests (and for `npm start`). On a machine
+without internet access, `THREE_LOCAL=/path/to/node_modules/three npm test`
+serves Three.js and the Draco decoder from disk instead of the CDN.
+
 ## Nav and the mobile menu
 
 `css/nav.css` and `js/nav.js` hold the top nav. The mode buttons (Miller, Alarm,
